@@ -1262,12 +1262,127 @@ img, video, canvas, svg { max-width: 100%; }
 }
 
 .hidden { display: none !important; }
+
+/* ========== STRENGTH FOUNDATIONS — PROGRAM TAB ========== */
+.prog-mode-bar { padding: 4px 0 12px; }
+.prog-mode-seg {
+  display: flex; background: rgba(255,255,255,0.06);
+  border-radius: 10px; padding: 3px; gap: 2px;
+}
+.prog-mode-btn {
+  flex: 1; padding: 8px; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.10em; color: var(--text-3); background: none;
+  border: none; border-radius: 8px; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.prog-mode-btn.active { background: rgba(255,255,255,0.10); color: var(--text-1); }
+
+.prog-mode .po-day-pill,
+.prog-mode .wt-section,
+.prog-mode .card { display: none !important; }
+.prog-view { display: none; padding-bottom: 120px; }
+.prog-mode .prog-view { display: block; }
+
+.prog-start-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; flex-wrap: wrap;
+}
+.prog-start-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  color: var(--text-3); text-transform: uppercase;
+}
+.prog-start-input {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 8px; color: var(--text-1); font-size: 13px;
+  padding: 5px 10px; color-scheme: dark;
+}
+.prog-current-week { font-size: 12px; font-weight: 700; color: var(--good); }
+
+.prog-week-row {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none;
+}
+.prog-week-row::-webkit-scrollbar { display: none; }
+.prog-week-pill {
+  flex-shrink: 0; position: relative; padding: 8px 16px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px; color: var(--text-2); font-size: 12px;
+  font-weight: 700; letter-spacing: 0.05em; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.prog-week-pill.is-current { border-color: rgba(110,231,183,0.4); color: var(--good); }
+.prog-week-pill.active {
+  background: rgba(110,231,183,0.15); border-color: rgba(110,231,183,0.5); color: var(--good);
+}
+.prog-week-now {
+  display: inline-block; margin-left: 5px; font-size: 9px; font-weight: 800;
+  letter-spacing: 0.08em; background: var(--good); color: #050506;
+  border-radius: 4px; padding: 1px 4px; vertical-align: middle;
+}
+
+.prog-overview {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px; padding: 14px 16px; margin-bottom: 14px;
+}
+.prog-overview-theme { font-size: 13px; font-weight: 700; color: var(--text-1); margin-bottom: 12px; }
+.prog-stats { display: flex; gap: 8px; }
+.prog-stat {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  background: rgba(255,255,255,0.04); border-radius: 10px; padding: 10px 6px; gap: 4px;
+}
+.prog-stat-val { font-size: 15px; font-weight: 800; color: var(--good); font-variant-numeric: tabular-nums; }
+.prog-stat-lbl { font-size: 9px; font-weight: 700; letter-spacing: 0.10em; color: var(--text-3); text-transform: uppercase; }
+
+.prog-day-seg {
+  display: flex; background: rgba(255,255,255,0.05);
+  border-radius: 10px; padding: 3px; gap: 2px; margin-bottom: 14px;
+}
+.prog-day-btn {
+  flex: 1; padding: 7px 2px; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.03em; color: var(--text-3); background: none;
+  border: none; border-radius: 8px; cursor: pointer;
+  transition: background 0.15s, color 0.15s; white-space: nowrap;
+}
+.prog-day-btn.active { background: rgba(255,255,255,0.10); color: var(--text-1); }
+
+.prog-table {
+  display: flex; flex-direction: column; gap: 0;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px; overflow: hidden;
+}
+.prog-row {
+  display: grid; grid-template-columns: 1fr 34px 46px 50px 70px;
+  align-items: center; padding: 10px 12px; gap: 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.prog-row:last-child { border-bottom: none; }
+.prog-row-head { background: rgba(255,255,255,0.03); }
+.prog-row-head .prog-cell {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.10em;
+  color: var(--text-3); text-transform: uppercase;
+}
+.prog-row.is-main { background: rgba(110,231,183,0.05); border-left: 3px solid var(--good); }
+.prog-cell { font-size: 13px; color: var(--text-1); line-height: 1.3; }
+.prog-cell-sets, .prog-cell-reps, .prog-cell-tempo, .prog-cell-kg {
+  text-align: center; font-variant-numeric: tabular-nums; font-weight: 600;
+}
+.prog-cell-kg { color: var(--good); font-weight: 700; font-size: 12px; }
+.prog-sub { display: block; font-size: 10px; color: var(--text-3); margin-top: 2px; }
+.prog-retest-note { font-size: 13px; color: var(--text-2); line-height: 1.6; padding: 8px 0; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
 <div class="po-shell">
+  <!-- WORKOUT / PROGRAM mode toggle -->
+  <div class="prog-mode-bar">
+    <div class="prog-mode-seg">
+      <button class="prog-mode-btn active" id="sfBtnWorkout" type="button">WORKOUT</button>
+      <button class="prog-mode-btn" id="sfBtnProgram" type="button">PROGRAM</button>
+    </div>
+  </div>
+
   <button class="po-day-pill" type="button" id="dayPill" title="Tap to switch the day filter to today's split">
     <span class="po-day-date" id="dayPillDate">—</span>
     <span class="po-day-sep">·</span>
@@ -1581,6 +1696,19 @@ img, video, canvas, svg { max-width: 100%; }
       </button>
       <div class="po-tw-past-body" id="poTwPastBody" style="display:none"></div>
     </div>
+  </div>
+
+  <!-- ===== PROGRAM VIEW ===== -->
+  <div class="prog-view" id="sfProgView">
+    <div class="prog-start-row">
+      <label class="prog-start-label" for="sfStartDate">Week 1 started</label>
+      <input type="date" class="prog-start-input" id="sfStartDate">
+      <span class="prog-current-week" id="sfCurrentWeek"></span>
+    </div>
+    <div class="prog-week-row" id="sfWeekRow"></div>
+    <div class="prog-overview" id="sfOverview"></div>
+    <div class="prog-day-seg" id="sfDaySeg"></div>
+    <div id="sfTable"></div>
   </div>
 </div>
 
@@ -3462,6 +3590,216 @@ img, video, canvas, svg { max-width: 100%; }
   window.addEventListener('beforeunload', pcFlushPushOnUnload);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) pcFlushPushOnUnload();
+  });
+})();
+
+// ============================================================
+// STRENGTH FOUNDATIONS — Program Tab
+// ============================================================
+(function () {
+  'use strict';
+
+  const SF_WEEKS = [
+    { label: 'W1', theme: 'Volume Introduction',    sets: 3, reps: 6, pct: 70,  rpe: '6–7' },
+    { label: 'W2', theme: 'Building Density',        sets: 4, reps: 5, pct: 75,  rpe: '7'   },
+    { label: 'W3', theme: 'Intensification',         sets: 4, reps: 4, pct: 80,  rpe: '7–8' },
+    { label: 'W4', theme: 'Planned Back-off',        sets: 3, reps: 5, pct: 75,  rpe: '7'   },
+    { label: 'W5', theme: 'Peak Strength',           sets: 3, reps: 3, pct: 85,  rpe: '8–9' },
+    { label: 'W6', theme: 'Retest',                  sets: null, reps: null, pct: null, rpe: null },
+  ];
+
+  const SF_DAYS = [
+    { id: 'd1', label: 'D1 · Squat'    },
+    { id: 'd2', label: 'D2 · Bench'    },
+    { id: 'd3', label: 'D3 · Deadlift' },
+    { id: 'd4', label: 'D4 · OHP'      },
+  ];
+
+  const SF_DATA = {
+    d1: {
+      main: { name: 'Back Squat', targets: [90, 97.5, 105, 97.5, 110] },
+      acc: [
+        { name: 'Romanian Deadlift',   sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
+        { name: 'Z DB Shoulder Press', sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
+        { name: 'Chest-Supported Row', sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
+        { name: 'Hanging Leg Raise',   sets: 3, reps: [12,12,10,10,10], tempo: '3-1-1' },
+      ],
+    },
+    d2: {
+      main: { name: 'Dumbbell Bench Press', targets: [null,null,null,null,null] },
+      acc: [
+        { name: 'Bulgarian Split Squat (per leg)', sets: 3, reps: [12,12,10,10,8], tempo: '3-1-1' },
+        { name: 'Incline Lateral Raise',           sets: 3, reps: [12,12,10,10,8], tempo: '3-1-1' },
+        { name: 'Walking Lunge (per leg)',          sets: 3, reps: [12,12,10,10,8], tempo: '3-1-1' },
+        { name: "Farmer's Carry",                  sets: 3, reps: ['20m','25m','25m','30m','30m'], tempo: '—' },
+      ],
+    },
+    d3: {
+      main: { name: 'Romanian Deadlift', targets: [97.5, 105, 112.5, 105, 120] },
+      acc: [
+        { name: 'Front Squat',      sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
+        { name: 'Weighted Pull-Up', sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
+        { name: 'Incline DB Press', sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
+        { name: 'Dead Bug',         sets: 3, reps: [12,12,10,10,10], tempo: '3-1-1' },
+      ],
+    },
+    d4: {
+      main: { name: 'Overhead Press', targets: [50, 52.5, 55, 52.5, 60] },
+      acc: [
+        { name: 'Standing Calf Raise',     sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
+        { name: 'DB Row',                  sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
+        { name: 'Reverse Lunge (per leg)', sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
+        { name: 'Weighted Plank',          sets: 3, reps: ['30s','35s','35s','40s','40s'], tempo: '—' },
+        { name: 'AMRAP Dips',              sets: 2, reps: ['AMRAP','AMRAP','AMRAP','AMRAP','AMRAP'], tempo: '—' },
+      ],
+    },
+  };
+
+  const SF_START_KEY = 'sf_start_date';
+  let sfWeek = 0;
+  let sfDay = 'd1';
+
+  function currentWeekIndex() {
+    const start = localStorage.getItem(SF_START_KEY);
+    if (!start) return -1;
+    const ms = Date.now() - new Date(start).getTime();
+    return Math.max(0, Math.min(Math.floor(ms / (7 * 24 * 60 * 60 * 1000)), 5));
+  }
+
+  function renderWeeks() {
+    const row = document.getElementById('sfWeekRow');
+    if (!row) return;
+    const curr = currentWeekIndex();
+    row.innerHTML = SF_WEEKS.map((w, i) =>
+      '<button class="prog-week-pill' + (sfWeek === i ? ' active' : '') + (curr === i ? ' is-current' : '') +
+      '" data-wi="' + i + '">' + w.label + (curr === i ? '<span class="prog-week-now">NOW</span>' : '') + '</button>'
+    ).join('');
+    row.querySelectorAll('.prog-week-pill').forEach(function (btn) {
+      btn.addEventListener('click', function () { sfWeek = +btn.dataset.wi; renderAll(); });
+    });
+  }
+
+  function renderOverview() {
+    const el = document.getElementById('sfOverview');
+    if (!el) return;
+    const w = SF_WEEKS[sfWeek];
+    if (w.sets === null) {
+      el.innerHTML = '<div class="prog-overview-theme">' + w.theme + '</div>' +
+        '<p class="prog-retest-note">Retest or estimate new 1RMs on each main lift. Run the block again with updated numbers.</p>';
+      return;
+    }
+    el.innerHTML =
+      '<div class="prog-overview-theme">' + w.theme + '</div>' +
+      '<div class="prog-stats">' +
+        '<div class="prog-stat"><span class="prog-stat-val">' + w.sets + '×' + w.reps + '</span><span class="prog-stat-lbl">Sets×Reps</span></div>' +
+        '<div class="prog-stat"><span class="prog-stat-val">' + w.pct + '%</span><span class="prog-stat-lbl">1RM</span></div>' +
+        '<div class="prog-stat"><span class="prog-stat-val">RPE ' + w.rpe + '</span><span class="prog-stat-lbl">Guide</span></div>' +
+      '</div>';
+  }
+
+  function renderDays() {
+    const seg = document.getElementById('sfDaySeg');
+    if (!seg) return;
+    seg.innerHTML = SF_DAYS.map(function (d) {
+      return '<button class="prog-day-btn' + (sfDay === d.id ? ' active' : '') + '" data-day="' + d.id + '">' + d.label + '</button>';
+    }).join('');
+    seg.querySelectorAll('.prog-day-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { sfDay = btn.dataset.day; renderAll(); });
+    });
+  }
+
+  function renderTable() {
+    const wrap = document.getElementById('sfTable');
+    if (!wrap) return;
+    const w = SF_WEEKS[sfWeek];
+    const data = SF_DATA[sfDay];
+    if (!data) return;
+
+    if (w.sets === null) {
+      wrap.innerHTML = '<p class="prog-retest-note" style="padding:12px 0">Retest week — no prescribed sets. Test your 1RM on each main lift this week.</p>';
+      return;
+    }
+
+    const wi = sfWeek;
+    const targetKg = data.main.targets[wi];
+    const intensityLabel = w.pct + '% / RPE ' + w.rpe;
+
+    let html =
+      '<div class="prog-table">' +
+        '<div class="prog-row prog-row-head">' +
+          '<span class="prog-cell prog-cell-name">Exercise</span>' +
+          '<span class="prog-cell prog-cell-sets">Sets</span>' +
+          '<span class="prog-cell prog-cell-reps">Reps</span>' +
+          '<span class="prog-cell prog-cell-tempo">Tempo</span>' +
+          '<span class="prog-cell prog-cell-kg">Target</span>' +
+        '</div>' +
+        '<div class="prog-row is-main">' +
+          '<span class="prog-cell prog-cell-name"><strong>' + data.main.name + '</strong>' +
+            '<span class="prog-sub">' + intensityLabel + ' · 2-3 min rest</span></span>' +
+          '<span class="prog-cell prog-cell-sets">' + w.sets + '</span>' +
+          '<span class="prog-cell prog-cell-reps">' + w.reps + '</span>' +
+          '<span class="prog-cell prog-cell-tempo">—</span>' +
+          '<span class="prog-cell prog-cell-kg">' + (targetKg != null ? targetKg + 'kg' : 'RPE only') + '</span>' +
+        '</div>';
+
+    data.acc.forEach(function (ex) {
+      const reps = ex.reps[wi];
+      html +=
+        '<div class="prog-row">' +
+          '<span class="prog-cell prog-cell-name">' + ex.name +
+            '<span class="prog-sub">RPE 7-8' + (ex.tempo !== '—' ? ' · ' + ex.tempo : '') + ' · 60-90s rest</span></span>' +
+          '<span class="prog-cell prog-cell-sets">' + ex.sets + '</span>' +
+          '<span class="prog-cell prog-cell-reps">' + reps + '</span>' +
+          '<span class="prog-cell prog-cell-tempo">' + ex.tempo + '</span>' +
+          '<span class="prog-cell prog-cell-kg">—</span>' +
+        '</div>';
+    });
+
+    html += '</div>';
+    wrap.innerHTML = html;
+  }
+
+  function renderAll() {
+    renderWeeks();
+    renderOverview();
+    renderDays();
+    renderTable();
+  }
+
+  function updateCurrentWeekLabel() {
+    const el = document.getElementById('sfCurrentWeek');
+    if (!el) return;
+    const wi = currentWeekIndex();
+    el.textContent = wi >= 0 ? '→ Currently ' + SF_WEEKS[Math.min(wi, 5)].label : '';
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const shell = document.querySelector('.po-shell');
+    const btnW = document.getElementById('sfBtnWorkout');
+    const btnP = document.getElementById('sfBtnProgram');
+
+    btnW.addEventListener('click', function () {
+      shell.classList.remove('prog-mode');
+      btnW.classList.add('active');
+      btnP.classList.remove('active');
+    });
+    btnP.addEventListener('click', function () {
+      shell.classList.add('prog-mode');
+      btnP.classList.add('active');
+      btnW.classList.remove('active');
+      renderAll();
+    });
+
+    const input = document.getElementById('sfStartDate');
+    const saved = localStorage.getItem(SF_START_KEY);
+    if (saved) { input.value = saved; sfWeek = Math.max(0, Math.min(currentWeekIndex(), 5)); }
+    updateCurrentWeekLabel();
+    input.addEventListener('change', function () {
+      localStorage.setItem(SF_START_KEY, input.value);
+      sfWeek = Math.max(0, Math.min(currentWeekIndex(), 5));
+      renderAll();
+      updateCurrentWeekLabel();
+    });
   });
 })();
 </script>
