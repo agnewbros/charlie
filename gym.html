@@ -3600,12 +3600,11 @@ img, video, canvas, svg { max-width: 100%; }
   'use strict';
 
   const SF_WEEKS = [
-    { label: 'W1', theme: 'Volume Introduction',    sets: 3, reps: 6, pct: 70,  rpe: '6–7' },
-    { label: 'W2', theme: 'Building Density',        sets: 4, reps: 5, pct: 75,  rpe: '7'   },
-    { label: 'W3', theme: 'Intensification',         sets: 4, reps: 4, pct: 80,  rpe: '7–8' },
-    { label: 'W4', theme: 'Planned Back-off',        sets: 3, reps: 5, pct: 75,  rpe: '7'   },
-    { label: 'W5', theme: 'Peak Strength',           sets: 3, reps: 3, pct: 85,  rpe: '8–9' },
-    { label: 'W6', theme: 'Retest',                  sets: null, reps: null, pct: null, rpe: null },
+    { label: 'W1', theme: 'Volume Introduction',      sets: 3, reps: 6, pct: 70, rpe: '6–7' },
+    { label: 'W2', theme: 'Building Density',          sets: 3, reps: 5, pct: 75, rpe: '7'   },
+    { label: 'W3', theme: 'Intensification',           sets: 3, reps: 3, pct: 80, rpe: '7–8' },
+    { label: 'W4', theme: 'Peak Strength Expression',  sets: 3, reps: 1, pct: 85, rpe: '8–9' },
+    { label: 'W5', theme: 'Retest',                    sets: null, reps: null, pct: null, rpe: null },
   ];
 
   const SF_DAYS = [
@@ -3617,40 +3616,40 @@ img, video, canvas, svg { max-width: 100%; }
 
   const SF_DATA = {
     d1: {
-      main: { name: 'Back Squat', targets: [90, 97.5, 105, 97.5, 110] },
+      main: { name: 'Back Squat', targets: [90, 97.5, 105, 110] },
       acc: [
-        { name: 'Romanian Deadlift',   sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
-        { name: 'Z DB Shoulder Press', sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
-        { name: 'Chest-Supported Row', sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
-        { name: 'Hanging Leg Raise',   sets: 3, reps: [12,12,10,10,10], tempo: '3-1-1' },
+        { name: 'Romanian Deadlift',   sets: 3, reps: [12,12,10, 8], tempo: '3-1-1' },
+        { name: 'Z DB Shoulder Press', sets: 3, reps: [12,12,10, 8], tempo: '3-1-1' },
+        { name: 'Chest-Supported Row', sets: 3, reps: [12,12,10, 8], tempo: '3-1-1' },
+        { name: 'Hanging Leg Raise',   sets: 3, reps: [12,12,10,10], tempo: '3-1-1' },
       ],
     },
     d2: {
-      main: { name: 'Dumbbell Bench Press', targets: [null,null,null,null,null] },
+      main: { name: 'Dumbbell Bench Press', targets: [null,null,null,null], repsOverride: [6,5,3,2] },
       acc: [
-        { name: 'Bulgarian Split Squat (per leg)', sets: 3, reps: [12,12,10,10,8], tempo: '3-1-1' },
-        { name: 'Incline Lateral Raise',           sets: 3, reps: [12,12,10,10,8], tempo: '3-1-1' },
-        { name: 'Walking Lunge (per leg)',          sets: 3, reps: [12,12,10,10,8], tempo: '3-1-1' },
-        { name: "Farmer's Carry",                  sets: 3, reps: ['20m','25m','25m','30m','30m'], tempo: '—' },
+        { name: 'Bulgarian Split Squat (per leg)', sets: 3, reps: [12,12,10,8], tempo: '3-1-1' },
+        { name: 'Incline Lateral Raise',           sets: 3, reps: [12,12,10,8], tempo: '3-1-1' },
+        { name: 'Walking Lunge (per leg)',          sets: 3, reps: [12,12,10,8], tempo: '3-1-1' },
+        { name: "Farmer's Carry",                  sets: 3, reps: ['20m','25m','25m','30m'], tempo: '—' },
       ],
     },
     d3: {
-      main: { name: 'Romanian Deadlift', targets: [97.5, 105, 112.5, 105, 120] },
+      main: { name: 'Romanian Deadlift', targets: [97.5, 105, 112.5, 120] },
       acc: [
-        { name: 'Front Squat',      sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
-        { name: 'Weighted Pull-Up', sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
-        { name: 'Incline DB Press', sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
-        { name: 'Dead Bug',         sets: 3, reps: [12,12,10,10,10], tempo: '3-1-1' },
+        { name: 'Front Squat',      sets: 3, reps: [12,12,10, 8], tempo: '3-1-1' },
+        { name: 'Weighted Pull-Up', sets: 3, reps: [12,12,10, 8], tempo: '3-1-1' },
+        { name: 'Incline DB Press', sets: 3, reps: [12,12,10, 8], tempo: '3-1-1' },
+        { name: 'Dead Bug',         sets: 3, reps: [12,12,10,10], tempo: '3-1-1' },
       ],
     },
     d4: {
-      main: { name: 'Overhead Press', targets: [50, 52.5, 55, 52.5, 60] },
+      main: { name: 'Overhead Press', targets: [50, 52.5, 55, 60] },
       acc: [
-        { name: 'Standing Calf Raise',     sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
-        { name: 'DB Row',                  sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
-        { name: 'Reverse Lunge (per leg)', sets: 3, reps: [12,12,10,10, 8], tempo: '3-1-1' },
-        { name: 'Weighted Plank',          sets: 3, reps: ['30s','35s','35s','40s','40s'], tempo: '—' },
-        { name: 'AMRAP Dips',              sets: 2, reps: ['AMRAP','AMRAP','AMRAP','AMRAP','AMRAP'], tempo: '—' },
+        { name: 'Standing Calf Raise',  sets: 3, reps: [12,12,10, 8], tempo: '3-1-1' },
+        { name: 'DB Row',               sets: 3, reps: [12,12,10, 8], tempo: '3-1-1' },
+        { name: 'Step Ups (per leg)',   sets: 3, reps: [12,12,10, 8], tempo: '3-1-1' },
+        { name: 'Weighted Plank',       sets: 3, reps: ['30s','35s','35s','40s'], tempo: '—' },
+        { name: 'AMRAP Dips',           sets: 2, reps: ['AMRAP','AMRAP','AMRAP','AMRAP'], tempo: '—' },
       ],
     },
   };
@@ -3663,7 +3662,7 @@ img, video, canvas, svg { max-width: 100%; }
     const start = localStorage.getItem(SF_START_KEY);
     if (!start) return -1;
     const ms = Date.now() - new Date(start).getTime();
-    return Math.max(0, Math.min(Math.floor(ms / (7 * 24 * 60 * 60 * 1000)), 5));
+    return Math.max(0, Math.min(Math.floor(ms / (7 * 24 * 60 * 60 * 1000)), 4));
   }
 
   function renderWeeks() {
@@ -3722,6 +3721,7 @@ img, video, canvas, svg { max-width: 100%; }
 
     const wi = sfWeek;
     const targetKg = data.main.targets[wi];
+    const mainReps = data.main.repsOverride ? data.main.repsOverride[wi] : w.reps;
     const intensityLabel = w.pct + '% / RPE ' + w.rpe;
 
     let html =
@@ -3737,7 +3737,7 @@ img, video, canvas, svg { max-width: 100%; }
           '<span class="prog-cell prog-cell-name"><strong>' + data.main.name + '</strong>' +
             '<span class="prog-sub">' + intensityLabel + ' · 2-3 min rest</span></span>' +
           '<span class="prog-cell prog-cell-sets">' + w.sets + '</span>' +
-          '<span class="prog-cell prog-cell-reps">' + w.reps + '</span>' +
+          '<span class="prog-cell prog-cell-reps">' + mainReps + '</span>' +
           '<span class="prog-cell prog-cell-tempo">—</span>' +
           '<span class="prog-cell prog-cell-kg">' + (targetKg != null ? targetKg + 'kg' : 'RPE only') + '</span>' +
         '</div>';
@@ -3792,11 +3792,11 @@ img, video, canvas, svg { max-width: 100%; }
 
     const input = document.getElementById('sfStartDate');
     const saved = localStorage.getItem(SF_START_KEY);
-    if (saved) { input.value = saved; sfWeek = Math.max(0, Math.min(currentWeekIndex(), 5)); }
+    if (saved) { input.value = saved; sfWeek = Math.max(0, Math.min(currentWeekIndex(), 4)); }
     updateCurrentWeekLabel();
     input.addEventListener('change', function () {
       localStorage.setItem(SF_START_KEY, input.value);
-      sfWeek = Math.max(0, Math.min(currentWeekIndex(), 5));
+      sfWeek = Math.max(0, Math.min(currentWeekIndex(), 4));
       renderAll();
       updateCurrentWeekLabel();
     });
