@@ -1462,32 +1462,6 @@ img, video, canvas, svg { max-width: 100%; }
       <span class="garmin-banner-label">Garmin Data</span>
       <span class="garmin-banner-dot"></span>
     </div>
-    <div class="garmin-stats">
-      <div class="garmin-stat">
-        <span class="garmin-stat-val" id="garminBB">—</span>
-        <span class="garmin-stat-lbl">Body Battery</span>
-      </div>
-      <div class="garmin-stat">
-        <span class="garmin-stat-val" id="garminHRV">—</span>
-        <span class="garmin-stat-lbl">HRV</span>
-      </div>
-      <div class="garmin-stat">
-        <span class="garmin-stat-val" id="garminReadiness">—</span>
-        <span class="garmin-stat-lbl">Readiness</span>
-      </div>
-      <div class="garmin-stat">
-        <span class="garmin-stat-val" id="garminSleep">—</span>
-        <span class="garmin-stat-lbl">Sleep</span>
-      </div>
-      <div class="garmin-stat">
-        <span class="garmin-stat-val" id="garminStress">—</span>
-        <span class="garmin-stat-lbl">Stress</span>
-      </div>
-      <div class="garmin-stat">
-        <span class="garmin-stat-val" id="garminSpO2">—</span>
-        <span class="garmin-stat-lbl">SpO2</span>
-      </div>
-    </div>
     <div class="garmin-acts-divider">Recent Activities</div>
     <div id="garminActs"></div>
   </div>
@@ -3978,13 +3952,6 @@ img, video, canvas, svg { max-width: 100%; }
       if (!res.ok) return;
       const d = await res.json();
       if (d.error) return;
-      const w = d.wellness || {};
-      document.getElementById('garminBB').textContent       = n(w.body_battery);
-      document.getElementById('garminHRV').textContent      = n(w.hrv, ' ms');
-      document.getElementById('garminReadiness').textContent = n(w.training_readiness);
-      document.getElementById('garminSleep').textContent    = n(w.sleep);
-      document.getElementById('garminStress').textContent   = n(w.stress);
-      document.getElementById('garminSpO2').textContent     = w.spo2 != null ? Math.round(w.spo2) + '%' : '—';
       renderActs(d.activities);
     } catch (_) {}
   }
