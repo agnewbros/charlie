@@ -1,8 +1,5 @@
 {
   "name": "charlie-dashboard",
   "version": "1.0.0",
-  "private": true,
-  "dependencies": {
-    "garmin-connect": "^1.4.0"
-  }
+  "private": true
 }

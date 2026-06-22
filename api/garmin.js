@@ -1,73 +1,37 @@
-// Vercel serverless function — proxies Garmin Connect data.
-// Required env vars (set in Vercel dashboard):
-//   GARMIN_EMAIL    — your Garmin Connect email
-//   GARMIN_PASSWORD — your Garmin Connect password
-//
-// Returns JSON: { steps, hr, hrv, sleep, date, cached }
+const MCP = 'https://garmin.amalgama.co/api/v1/mcp/7e260090-9ba6-4724-8027-f39f31549796';
 
-const { GarminConnect } = require('garmin-connect');
-
-// Module-level cache: stays warm across invocations in the same container.
 let _cache = { data: null, ts: 0 };
-const CACHE_MS = 15 * 60 * 1000; // 15 minutes
+const CACHE_MS = 10 * 60 * 1000;
 
-function safe(result) {
-  return result.status === 'fulfilled' ? result.value : null;
+async function mcpTool(name, args) {
+  const r = await fetch(MCP, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args || {} } })
+  });
+  const j = await r.json();
+  const text = j?.result?.content?.[0]?.text;
+  return text ? JSON.parse(text) : null;
 }
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=60');
+  res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=60');
 
-  // Return cached data if fresh
   if (_cache.data && Date.now() - _cache.ts < CACHE_MS) {
     return res.json({ ..._cache.data, cached: true });
   }
 
-  if (!process.env.GARMIN_EMAIL || !process.env.GARMIN_PASSWORD) {
-    return res.status(500).json({ error: 'GARMIN_EMAIL / GARMIN_PASSWORD env vars not set' });
-  }
-
   try {
-    const gc = new GarminConnect();
-    await gc.login(process.env.GARMIN_EMAIL, process.env.GARMIN_PASSWORD);
-
-    const today = new Date();
-
-    const [summaryRes, hrRes, sleepRes, hrvRes] = await Promise.allSettled([
-      gc.getUserSummary(today),
-      gc.getHeartRate(today),
-      gc.getSleep(today),
-      gc.getHRV(today),
+    const [wellness, activities] = await Promise.all([
+      mcpTool('get_wellness_snapshot'),
+      mcpTool('list_activities', { limit: 5 }),
     ]);
 
-    const summary = safe(summaryRes) || {};
-    const hr      = safe(hrRes)      || {};
-    const sleep   = safe(sleepRes)   || {};
-    const hrv     = safe(hrvRes)     || {};
-
-    // Steps — field varies by API version
-    const steps = summary.totalSteps ?? summary.steps ?? null;
-
-    // Resting heart rate
-    const heartRate = hr.restingHeartRate ?? hr.resting ?? null;
-
-    // HRV (ms) — field varies
-    const hrvVal =
-      hrv?.hrvSummary?.lastNight ??
-      hrv?.lastNight ??
-      hrv?.weeklyAvg ??
-      null;
-
-    // Sleep in hours
-    const sleepSec =
-      sleep?.dailySleepDTO?.sleepTimeSeconds ??
-      sleep?.sleepTimeSeconds ??
-      null;
-    const sleepHours = sleepSec != null ? Math.round(sleepSec / 360) / 10 : null;
-
-    const date = today.toISOString().slice(0, 10);
-    const data = { steps, hr: heartRate, hrv: hrvVal, sleep: sleepHours, date };
+    const data = {
+      wellness: wellness || {},
+      activities: Array.isArray(activities) ? activities : [],
+    };
 
     _cache = { data, ts: Date.now() };
     res.json({ ...data, cached: false });

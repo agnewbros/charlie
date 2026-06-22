@@ -1403,7 +1403,8 @@ img, video, canvas, svg { max-width: 100%; }
   50%       { opacity: 0.35; }
 }
 .garmin-stats {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  margin-bottom: 14px;
 }
 .garmin-stat {
   display: flex; flex-direction: column; align-items: center;
@@ -1418,6 +1419,25 @@ img, video, canvas, svg { max-width: 100%; }
   font-size: 9px; font-weight: 700; letter-spacing: 0.10em;
   color: var(--text-3); text-transform: uppercase;
 }
+.garmin-acts-divider {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
+  color: var(--text-3); text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.garmin-act {
+  display: flex; flex-direction: column; gap: 4px;
+  background: rgba(255,255,255,0.03); border-radius: 10px;
+  padding: 10px 12px; margin-bottom: 6px;
+}
+.garmin-act-top {
+  display: flex; justify-content: space-between; align-items: center;
+}
+.garmin-act-name { font-size: 13px; font-weight: 700; color: var(--text-1); }
+.garmin-act-date { font-size: 11px; color: var(--text-3); }
+.garmin-act-row {
+  display: flex; gap: 14px;
+}
+.garmin-act-stat { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 @media (max-width: 480px) {
   .garmin-stats { grid-template-columns: repeat(2, 1fr); }
 }
@@ -1444,22 +1464,32 @@ img, video, canvas, svg { max-width: 100%; }
     </div>
     <div class="garmin-stats">
       <div class="garmin-stat">
-        <span class="garmin-stat-val" id="garminSteps">—</span>
-        <span class="garmin-stat-lbl">Steps</span>
-      </div>
-      <div class="garmin-stat">
-        <span class="garmin-stat-val" id="garminHR">—</span>
-        <span class="garmin-stat-lbl">Heart Rate</span>
+        <span class="garmin-stat-val" id="garminBB">—</span>
+        <span class="garmin-stat-lbl">Body Battery</span>
       </div>
       <div class="garmin-stat">
         <span class="garmin-stat-val" id="garminHRV">—</span>
         <span class="garmin-stat-lbl">HRV</span>
       </div>
       <div class="garmin-stat">
+        <span class="garmin-stat-val" id="garminReadiness">—</span>
+        <span class="garmin-stat-lbl">Readiness</span>
+      </div>
+      <div class="garmin-stat">
         <span class="garmin-stat-val" id="garminSleep">—</span>
         <span class="garmin-stat-lbl">Sleep</span>
       </div>
+      <div class="garmin-stat">
+        <span class="garmin-stat-val" id="garminStress">—</span>
+        <span class="garmin-stat-lbl">Stress</span>
+      </div>
+      <div class="garmin-stat">
+        <span class="garmin-stat-val" id="garminSpO2">—</span>
+        <span class="garmin-stat-lbl">SpO2</span>
+      </div>
     </div>
+    <div class="garmin-acts-divider">Recent Activities</div>
+    <div id="garminActs"></div>
   </div>
 
   <button class="po-day-pill" type="button" id="dayPill" title="Tap to switch the day filter to today's split">
@@ -3900,16 +3930,46 @@ img, video, canvas, svg { max-width: 100%; }
 (function () {
   'use strict';
 
-  function fmtSteps(v) {
-    if (v == null) return '—';
-    return v >= 1000 ? (v / 1000).toFixed(1) + 'k' : String(v);
+  const ACT_NAMES = {
+    RUNNING: 'Run', CYCLING: 'Cycle', SWIMMING: 'Swim',
+    TENNIS_V2: 'Tennis', INDOOR_CARDIO: 'Cardio',
+    STRENGTH_TRAINING: 'Strength', YOGA: 'Yoga',
+    WALKING: 'Walk', HIKING: 'Hike',
+  };
+
+  function n(v, suffix) { return v != null ? Math.round(v) + (suffix || '') : '—'; }
+
+  function fmtDur(sec) {
+    if (!sec) return '—';
+    const m = Math.round(sec / 60);
+    return m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + 'm';
   }
-  function fmt(v, suffix) {
-    return v != null ? String(Math.round(v)) + suffix : '—';
+
+  function fmtDist(m) {
+    if (!m || m < 100) return null;
+    return (m / 1000).toFixed(1) + 'km';
   }
-  function fmtSleep(v) {
-    if (v == null) return '—';
-    return v.toFixed(1) + 'h';
+
+  function fmtDate(iso) {
+    return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
+
+  function renderActs(acts) {
+    const el = document.getElementById('garminActs');
+    if (!acts || !acts.length) { el.innerHTML = '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:10px 0">No recent activities</div>'; return; }
+    el.innerHTML = acts.map(function (a) {
+      const name = ACT_NAMES[a.activity_type] || a.activity_type.replace(/_V2$/, '').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, function(c){return c.toUpperCase();});
+      const stats = [
+        fmtDur(a.duration_seconds),
+        fmtDist(a.distance_meters),
+        a.average_heart_rate_in_beats_per_minute ? a.average_heart_rate_in_beats_per_minute + ' bpm' : null,
+        a.calories ? a.calories + ' cal' : null,
+      ].filter(Boolean);
+      return '<div class="garmin-act">' +
+        '<div class="garmin-act-top"><span class="garmin-act-name">' + name + '</span><span class="garmin-act-date">' + fmtDate(a.start_time) + '</span></div>' +
+        '<div class="garmin-act-row">' + stats.map(function(s){ return '<span class="garmin-act-stat">' + s + '</span>'; }).join('') + '</div>' +
+        '</div>';
+    }).join('');
   }
 
   async function loadGarmin() {
@@ -3918,13 +3978,15 @@ img, video, canvas, svg { max-width: 100%; }
       if (!res.ok) return;
       const d = await res.json();
       if (d.error) return;
-      document.getElementById('garminSteps').textContent = fmtSteps(d.steps);
-      document.getElementById('garminHR').textContent    = fmt(d.hr, ' bpm');
-      document.getElementById('garminHRV').textContent   = fmt(d.hrv, ' ms');
-      document.getElementById('garminSleep').textContent = fmtSleep(d.sleep);
-    } catch (_) {
-      // silent — banner stays at dashes if API unreachable
-    }
+      const w = d.wellness || {};
+      document.getElementById('garminBB').textContent       = n(w.body_battery);
+      document.getElementById('garminHRV').textContent      = n(w.hrv, ' ms');
+      document.getElementById('garminReadiness').textContent = n(w.training_readiness);
+      document.getElementById('garminSleep').textContent    = n(w.sleep);
+      document.getElementById('garminStress').textContent   = n(w.stress);
+      document.getElementById('garminSpO2').textContent     = w.spo2 != null ? Math.round(w.spo2) + '%' : '—';
+      renderActs(d.activities);
+    } catch (_) {}
   }
 
   window.loadGarmin = loadGarmin;
