@@ -1372,12 +1372,17 @@ img, video, canvas, svg { max-width: 100%; }
 
 /* ========== GARMIN DATA BANNER ========== */
 .garmin-banner {
+  display: none;
   background: rgba(0, 156, 222, 0.06);
   border: 1px solid rgba(0, 156, 222, 0.20);
   border-radius: 14px;
   padding: 14px 16px;
   margin-bottom: 12px;
 }
+.garmin-mode .garmin-banner { display: block; }
+.garmin-mode .po-day-pill,
+.garmin-mode .wt-section,
+.garmin-mode .card { display: none !important; }
 .garmin-banner-header {
   display: flex; align-items: center; gap: 8px;
   margin-bottom: 12px;
@@ -1427,6 +1432,7 @@ img, video, canvas, svg { max-width: 100%; }
     <div class="prog-mode-seg">
       <button class="prog-mode-btn active" id="sfBtnWorkout" type="button">WORKOUT</button>
       <button class="prog-mode-btn" id="sfBtnProgram" type="button">PROGRAM</button>
+      <button class="prog-mode-btn" id="sfBtnGarmin" type="button">GARMIN</button>
     </div>
   </div>
 
@@ -3850,17 +3856,29 @@ img, video, canvas, svg { max-width: 100%; }
     const shell = document.querySelector('.po-shell');
     const btnW = document.getElementById('sfBtnWorkout');
     const btnP = document.getElementById('sfBtnProgram');
+    const btnG = document.getElementById('sfBtnGarmin');
 
     btnW.addEventListener('click', function () {
-      shell.classList.remove('prog-mode');
+      shell.classList.remove('prog-mode', 'garmin-mode');
       btnW.classList.add('active');
       btnP.classList.remove('active');
+      btnG.classList.remove('active');
     });
     btnP.addEventListener('click', function () {
       shell.classList.add('prog-mode');
+      shell.classList.remove('garmin-mode');
       btnP.classList.add('active');
       btnW.classList.remove('active');
+      btnG.classList.remove('active');
       renderAll();
+    });
+    btnG.addEventListener('click', function () {
+      shell.classList.add('garmin-mode');
+      shell.classList.remove('prog-mode');
+      btnG.classList.add('active');
+      btnW.classList.remove('active');
+      btnP.classList.remove('active');
+      loadGarmin();
     });
 
     const input = document.getElementById('sfStartDate');
@@ -3909,7 +3927,7 @@ img, video, canvas, svg { max-width: 100%; }
     }
   }
 
-  loadGarmin();
+  window.loadGarmin = loadGarmin;
 })();
 </script>
 
