@@ -1369,6 +1369,53 @@ img, video, canvas, svg { max-width: 100%; }
 .prog-cell-kg { color: var(--good); font-weight: 700; font-size: 12px; }
 .prog-sub { display: block; font-size: 10px; color: var(--text-3); margin-top: 2px; }
 .prog-retest-note { font-size: 13px; color: var(--text-2); line-height: 1.6; padding: 8px 0; }
+
+/* ========== GARMIN DATA BANNER ========== */
+.garmin-banner {
+  background: rgba(0, 156, 222, 0.06);
+  border: 1px solid rgba(0, 156, 222, 0.20);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.garmin-banner-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px;
+}
+.garmin-banner-label {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.18em;
+  text-transform: uppercase; color: #009CDE;
+}
+.garmin-banner-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #009CDE;
+  box-shadow: 0 0 6px rgba(0, 156, 222, 0.7);
+  margin-left: auto;
+  animation: garmin-pulse 2s ease-in-out infinite;
+}
+@keyframes garmin-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+.garmin-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.garmin-stat {
+  display: flex; flex-direction: column; align-items: center;
+  background: rgba(255,255,255,0.03); border-radius: 10px;
+  padding: 10px 6px; gap: 4px;
+}
+.garmin-stat-val {
+  font-size: 15px; font-weight: 800; color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+.garmin-stat-lbl {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.10em;
+  color: var(--text-3); text-transform: uppercase;
+}
+@media (max-width: 480px) {
+  .garmin-stats { grid-template-columns: repeat(2, 1fr); }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1380,6 +1427,32 @@ img, video, canvas, svg { max-width: 100%; }
     <div class="prog-mode-seg">
       <button class="prog-mode-btn active" id="sfBtnWorkout" type="button">WORKOUT</button>
       <button class="prog-mode-btn" id="sfBtnProgram" type="button">PROGRAM</button>
+    </div>
+  </div>
+
+  <!-- GARMIN DATA BANNER -->
+  <div class="garmin-banner" id="garminBanner">
+    <div class="garmin-banner-header">
+      <span class="garmin-banner-label">Garmin Data</span>
+      <span class="garmin-banner-dot"></span>
+    </div>
+    <div class="garmin-stats">
+      <div class="garmin-stat">
+        <span class="garmin-stat-val" id="garminSteps">—</span>
+        <span class="garmin-stat-lbl">Steps</span>
+      </div>
+      <div class="garmin-stat">
+        <span class="garmin-stat-val" id="garminHR">—</span>
+        <span class="garmin-stat-lbl">Heart Rate</span>
+      </div>
+      <div class="garmin-stat">
+        <span class="garmin-stat-val" id="garminHRV">—</span>
+        <span class="garmin-stat-lbl">HRV</span>
+      </div>
+      <div class="garmin-stat">
+        <span class="garmin-stat-val" id="garminSleep">—</span>
+        <span class="garmin-stat-lbl">Sleep</span>
+      </div>
     </div>
   </div>
 
@@ -3801,6 +3874,42 @@ img, video, canvas, svg { max-width: 100%; }
       updateCurrentWeekLabel();
     });
   });
+})();
+</script>
+
+<script>
+// Garmin Data banner — fetches from /api/garmin (Vercel serverless function)
+(function () {
+  'use strict';
+
+  function fmtSteps(v) {
+    if (v == null) return '—';
+    return v >= 1000 ? (v / 1000).toFixed(1) + 'k' : String(v);
+  }
+  function fmt(v, suffix) {
+    return v != null ? String(Math.round(v)) + suffix : '—';
+  }
+  function fmtSleep(v) {
+    if (v == null) return '—';
+    return v.toFixed(1) + 'h';
+  }
+
+  async function loadGarmin() {
+    try {
+      const res = await fetch('/api/garmin');
+      if (!res.ok) return;
+      const d = await res.json();
+      if (d.error) return;
+      document.getElementById('garminSteps').textContent = fmtSteps(d.steps);
+      document.getElementById('garminHR').textContent    = fmt(d.hr, ' bpm');
+      document.getElementById('garminHRV').textContent   = fmt(d.hrv, ' ms');
+      document.getElementById('garminSleep').textContent = fmtSleep(d.sleep);
+    } catch (_) {
+      // silent — banner stays at dashes if API unreachable
+    }
+  }
+
+  loadGarmin();
 })();
 </script>
 
