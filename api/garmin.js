@@ -66,20 +66,22 @@ module.exports = async function handler(req, res) {
       const sl = val(sleepR)   || {};
       const sleepSec = sl?.dailySleepDTO?.sleepTimeSeconds ?? sl?.sleepTimeSeconds ?? null;
 
-      // HRV service lives on the modern proxy, not connectapi
-      const PROXY = 'https://connect.garmin.com/modern/proxy';
-      let hv = null, hvErr = null;
+      const uid = su?.userProfileId || '';
+      let hv = null, hvErr = [];
       const hrvUrls = [
-        `${PROXY}/hrv-service/hrv/${dn}?startDate=${weekAgo}&endDate=${dateStr}`,
-        `${PROXY}/hrv-service/hrv?startDate=${weekAgo}&endDate=${dateStr}`,
-        `${GC_API}/hrv-service/hrv/${dn}?startDate=${weekAgo}&endDate=${dateStr}`,
+        `${GC_API}/hrv-service/hrv/${uid}?startDate=${weekAgo}&endDate=${dateStr}`,
+        `${GC_API}/hrv-service/hrv/daily/${dn}?calendarDate=${dateStr}`,
+        `${GC_API}/hrv-service/hrv/status/${dn}?startDate=${weekAgo}&endDate=${dateStr}`,
+        `${GC_API}/hrv-service/hrv?startDate=${weekAgo}&endDate=${dateStr}`,
       ];
       for (const url of hrvUrls) {
         try {
-          hv = await gc.get(url);
-          if (hv && (Array.isArray(hv?.hrv) ? hv.hrv.length : Object.keys(hv).length)) break;
-          hv = null;
-        } catch (e) { hvErr = e.message; hv = null; }
+          const res = await gc.get(url);
+          if (res && typeof res === 'object' && !Array.isArray(res) &&
+              (Array.isArray(res.hrv) ? res.hrv.length : Object.keys(res).length > 0)) {
+            hv = res; break;
+          }
+        } catch (e) { hvErr.push(url.replace(GC_API, '') + ': ' + e.message.slice(0, 80)); }
       }
 
       // HRV: find most recent lastNight value
@@ -100,7 +102,7 @@ module.exports = async function handler(req, res) {
         hrv,
         stress:       su?.averageStressLevel ?? null,
         sleep:        sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
-        _hv_debug:    { hv, hvErr },
+        _hv_debug:    { hv: hv ? Object.keys(hv) : null, hvErr },
       };
     } catch (e) { wellness = { _error: e.message }; }
   }
