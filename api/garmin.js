@@ -68,9 +68,9 @@ module.exports = async function handler(req, res) {
 
       // Try proxy URL with bearer token + native-client headers
       const tokenObj = gc.exportToken();
-      const token = tokenObj?.access_token || tokenObj?.accessToken;
+      const token = tokenObj?.oauth2?.access_token;
       let hrv = null;
-      let hvDebug = { tokenType: typeof tokenObj, tokenKeys: tokenObj ? Object.keys(tokenObj) : null };
+      let hvDebug = {};
       if (token) {
         try {
           const r = await fetch(
