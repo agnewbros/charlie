@@ -81,10 +81,10 @@ async function ssoLogin(email, password) {
 }
 
 async function getHRVCookies() {
-  if (_hvJar && Date.now() - _hvJarTs < 55 * 60 * 1000) return _hvJar;
+  if (_hvJar && Date.now() - _hvJarTs < 55 * 60 * 1000) return { jar: _hvJar };
   const result = await ssoLogin(process.env.GARMIN_EMAIL, process.env.GARMIN_PASSWORD);
   if (result.ok) { _hvJar = result.jar; _hvJarTs = Date.now(); }
-  return result.ok ? _hvJar : null;
+  return result; // always return full result so caller can inspect err
 }
 
 function val(r) { return r.status === 'fulfilled' ? r.value : null; }
@@ -124,8 +124,9 @@ module.exports = async function handler(req, res) {
       let hrv = null;
       let hvDebug = {};
       try {
-        const jar = await getHRVCookies();
-        if (jar) {
+        const ssoResult = await getHRVCookies();
+        if (ssoResult.jar) {
+          const jar = ssoResult.jar;
           const cookieHdr = Object.entries(jar).map(([k, v]) => `${k}=${v}`).join('; ');
           const r = await fetch(`${PROXY}/hrv-service/hrv/${dn}?startDate=${weekAgo}&endDate=${dateStr}`, {
             headers: { 'Cookie': cookieHdr, 'Accept': 'application/json', 'NK': 'NT', 'User-Agent': 'Mozilla/5.0' }
@@ -143,7 +144,7 @@ module.exports = async function handler(req, res) {
             }
           }
         } else {
-          hvDebug = { err: 'sso_failed' };
+          hvDebug = ssoResult; // exposes err, htmlSample, status etc.
         }
       } catch (e) { hvDebug = { err: e.message }; }
 
