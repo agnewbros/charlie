@@ -55,19 +55,25 @@ module.exports = async function handler(req, res) {
       const profile = await gc.getUserProfile().catch(() => ({}));
       const dn = profile?.displayName || '';
 
-      const [summaryR, sleepR] = await Promise.allSettled([
+      const [summaryR, sleepR, hrvR] = await Promise.allSettled([
         gc.get(`${GC_API}/usersummary-service/usersummary/daily/${dn}?calendarDate=${dateStr}`),
         gc.getSleepData(today),
+        gc.get(`${GC_API}/hrv-service/hrv/${dn}?startDate=${dateStr}&endDate=${dateStr}`),
       ]);
 
       const su = val(summaryR) || {};
       const sl = val(sleepR)   || {};
+      const hv = val(hrvR)     || {};
 
       const sleepSec = sl?.dailySleepDTO?.sleepTimeSeconds ?? sl?.sleepTimeSeconds ?? null;
+
+      // HRV: response may be object with .hrv array, or direct summary
+      const hvSummary = Array.isArray(hv?.hrv) ? hv.hrv[0]?.hrvSummary : hv?.hrvSummary;
 
       wellness = {
         body_battery: su?.bodyBatteryMostRecentValue ?? null,
         resting_hr:   su?.restingHeartRate ?? null,
+        hrv:          hvSummary?.lastNight ?? hvSummary?.weeklyAvg ?? null,
         stress:       su?.averageStressLevel ?? null,
         sleep:        sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
       };
