@@ -1403,7 +1403,7 @@ img, video, canvas, svg { max-width: 100%; }
   50%       { opacity: 0.35; }
 }
 .garmin-stats {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
   margin-bottom: 14px;
 }
 .garmin-stat {
@@ -1461,6 +1461,24 @@ img, video, canvas, svg { max-width: 100%; }
     <div class="garmin-banner-header">
       <span class="garmin-banner-label">Garmin Data</span>
       <span class="garmin-banner-dot"></span>
+    </div>
+    <div class="garmin-stats">
+      <div class="garmin-stat">
+        <span class="garmin-stat-val" id="garminHR">—</span>
+        <span class="garmin-stat-lbl">Resting HR</span>
+      </div>
+      <div class="garmin-stat">
+        <span class="garmin-stat-val" id="garminHRV">—</span>
+        <span class="garmin-stat-lbl">HRV</span>
+      </div>
+      <div class="garmin-stat">
+        <span class="garmin-stat-val" id="garminStress">—</span>
+        <span class="garmin-stat-lbl">Stress</span>
+      </div>
+      <div class="garmin-stat">
+        <span class="garmin-stat-val" id="garminSleep">—</span>
+        <span class="garmin-stat-lbl">Sleep</span>
+      </div>
     </div>
     <div class="garmin-acts-divider">Recent Activities</div>
     <div id="garminActs"></div>
@@ -3952,6 +3970,11 @@ img, video, canvas, svg { max-width: 100%; }
       if (!res.ok) return;
       const d = await res.json();
       if (d.error) return;
+      const w = d.wellness || {};
+      document.getElementById('garminHR').textContent     = w.resting_hr != null ? Math.round(w.resting_hr) + ' bpm' : '—';
+      document.getElementById('garminHRV').textContent    = w.hrv != null ? Math.round(w.hrv) + ' ms' : '—';
+      document.getElementById('garminStress').textContent = w.stress != null ? Math.round(w.stress) : '—';
+      document.getElementById('garminSleep').textContent  = w.sleep != null ? w.sleep.toFixed(1) + 'h' : '—';
       renderActs(d.activities);
     } catch (_) {}
   }
