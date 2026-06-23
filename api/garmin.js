@@ -66,34 +66,21 @@ module.exports = async function handler(req, res) {
       const sl = val(sleepR)   || {};
       const sleepSec = sl?.dailySleepDTO?.sleepTimeSeconds ?? sl?.sleepTimeSeconds ?? null;
 
-      const uid = su?.userProfileId || '';
-      let hv = null, hvErr = [];
-      const hrvUrls = [
-        `${GC_API}/hrv-service/hrv/${uid}?startDate=${weekAgo}&endDate=${dateStr}`,
-        `${GC_API}/hrv-service/hrv/daily/${dn}?calendarDate=${dateStr}`,
-        `${GC_API}/hrv-service/hrv/status/${dn}?startDate=${weekAgo}&endDate=${dateStr}`,
-        `${GC_API}/hrv-service/hrv?startDate=${weekAgo}&endDate=${dateStr}`,
-      ];
-      for (const url of hrvUrls) {
-        try {
-          const res = await gc.get(url);
-          if (res && typeof res === 'object' && !Array.isArray(res) &&
-              (Array.isArray(res.hrv) ? res.hrv.length : Object.keys(res).length > 0)) {
-            hv = res; break;
-          }
-        } catch (e) { hvErr.push(url.replace(GC_API, '') + ': ' + e.message.slice(0, 80)); }
-      }
+      // Try MCP get_hrv_status (works if amalgama has wellness access)
+      const mcpHrv = await mcpTool('get_hrv_status', {}).catch(() => null);
 
-      // HRV: find most recent lastNight value
+      // Try Garmin epoch endpoint which can contain HRV readings
+      const uid = su?.userProfileId || '';
+      let gcHrv = null;
+      try {
+        gcHrv = await gc.get(`${GC_API}/wellness-service/wellness/epoch/request/${dn}?startDate=${dateStr}&endDate=${dateStr}`);
+      } catch (_) {}
+
+      // Extract HRV from whichever source worked
       let hrv = null;
-      if (Array.isArray(hv?.hrv) && hv.hrv.length) {
-        for (let i = hv.hrv.length - 1; i >= 0; i--) {
-          const s = hv.hrv[i]?.hrvSummary;
-          if (s?.lastNight != null) { hrv = s.lastNight; break; }
-          if (s?.weeklyAvg  != null) { hrv = s.weeklyAvg;  break; }
-        }
-      } else if (hv?.hrvSummary) {
-        hrv = hv.hrvSummary?.lastNight ?? hv.hrvSummary?.weeklyAvg ?? null;
+      if (Array.isArray(mcpHrv) && mcpHrv.length) {
+        const s = mcpHrv[0];
+        hrv = s?.lastNight ?? s?.hrv ?? s?.weeklyAvg ?? null;
       }
 
       wellness = {
@@ -102,7 +89,7 @@ module.exports = async function handler(req, res) {
         hrv,
         stress:       su?.averageStressLevel ?? null,
         sleep:        sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
-        _hv_debug:    { hv: hv ? Object.keys(hv) : null, hvErr },
+        _hv_debug:    { mcpHrv, gcHrv_keys: gcHrv ? Object.keys(gcHrv) : null },
       };
     } catch (e) { wellness = { _error: e.message }; }
   }
