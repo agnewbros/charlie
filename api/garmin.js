@@ -66,13 +66,27 @@ module.exports = async function handler(req, res) {
       let hrv = null;
       let hvDebug = {};
       try {
-        const hvR = await gc.get(`${GC_API}/hrv-service/hrv/${dn}?startDate=${weekAgo}&endDate=${dateStr}`).catch(e => ({ _err: e.message }));
-        hvDebug = { keys: hvR ? Object.keys(hvR) : null, sample: JSON.stringify(hvR).slice(0, 300) };
-        if (Array.isArray(hvR?.hrv) && hvR.hrv.length) {
-          for (let i = hvR.hrv.length - 1; i >= 0; i--) {
-            const s = hvR.hrv[i]?.hrvSummary;
-            if (s?.lastNight != null) { hrv = s.lastNight; break; }
-            if (s?.weeklyAvg  != null) { hrv = s.weeklyAvg;  break; }
+        // Try several URL/param variants to find what connectapi accepts
+        const [a, b, c] = await Promise.allSettled([
+          gc.get(`${GC_API}/hrv-service/hrv/${dn}?calendarDate=${dateStr}`),
+          gc.get(`${GC_API}/hrv-service/hrv/${dn}/daily?calendarDate=${dateStr}`),
+          gc.get(`${GC_API}/hrv-service/hrv/daily/${dn}?calendarDate=${dateStr}`),
+        ]);
+        hvDebug = {
+          a: a.status === 'fulfilled' ? JSON.stringify(a.value).slice(0, 200) : a.reason?.message?.slice(0, 80),
+          b: b.status === 'fulfilled' ? JSON.stringify(b.value).slice(0, 200) : b.reason?.message?.slice(0, 80),
+          c: c.status === 'fulfilled' ? JSON.stringify(c.value).slice(0, 200) : c.reason?.message?.slice(0, 80),
+        };
+        for (const r of [a, b, c]) {
+          if (r.status !== 'fulfilled') continue;
+          const hv = r.value;
+          if (Array.isArray(hv?.hrv) && hv.hrv.length) {
+            for (let i = hv.hrv.length - 1; i >= 0; i--) {
+              const s = hv.hrv[i]?.hrvSummary;
+              if (s?.lastNight != null) { hrv = s.lastNight; break; }
+              if (s?.weeklyAvg  != null) { hrv = s.weeklyAvg;  break; }
+            }
+            if (hrv != null) break;
           }
         }
       } catch (e) { hvDebug = { err: e.message }; }
