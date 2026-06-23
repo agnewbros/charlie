@@ -66,21 +66,29 @@ module.exports = async function handler(req, res) {
       const sl = val(sleepR)   || {};
       const sleepSec = sl?.dailySleepDTO?.sleepTimeSeconds ?? sl?.sleepTimeSeconds ?? null;
 
-      // Try MCP get_hrv_status (works if amalgama has wellness access)
-      const mcpHrv = await mcpTool('get_hrv_status', {}).catch(() => null);
-
-      // Try Garmin epoch endpoint which can contain HRV readings
-      const uid = su?.userProfileId || '';
-      let gcHrv = null;
-      try {
-        gcHrv = await gc.get(`${GC_API}/wellness-service/wellness/epoch/request/${dn}?startDate=${dateStr}&endDate=${dateStr}`);
-      } catch (_) {}
-
-      // Extract HRV from whichever source worked
+      // Try proxy URL with bearer token + native-client headers
+      const token = gc.exportToken()?.access_token;
       let hrv = null;
-      if (Array.isArray(mcpHrv) && mcpHrv.length) {
-        const s = mcpHrv[0];
-        hrv = s?.lastNight ?? s?.hrv ?? s?.weeklyAvg ?? null;
+      let hvDebug = {};
+      if (token) {
+        try {
+          const r = await fetch(
+            `https://connect.garmin.com/modern/proxy/hrv-service/hrv/${dn}?startDate=${weekAgo}&endDate=${dateStr}`,
+            { headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json', 'NK': 'NT', 'X-app-ver': '4.70.2.0' } }
+          );
+          const text = await r.text();
+          hvDebug = { status: r.status, ct: r.headers.get('content-type'), sample: text.slice(0, 300) };
+          if (r.ok && text.trimStart().startsWith('{')) {
+            const hv = JSON.parse(text);
+            if (Array.isArray(hv?.hrv) && hv.hrv.length) {
+              for (let i = hv.hrv.length - 1; i >= 0; i--) {
+                const s = hv.hrv[i]?.hrvSummary;
+                if (s?.lastNight != null) { hrv = s.lastNight; break; }
+                if (s?.weeklyAvg  != null) { hrv = s.weeklyAvg;  break; }
+              }
+            }
+          }
+        } catch (e) { hvDebug = { err: e.message }; }
       }
 
       wellness = {
@@ -89,7 +97,7 @@ module.exports = async function handler(req, res) {
         hrv,
         stress:       su?.averageStressLevel ?? null,
         sleep:        sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
-        _hv_debug:    { mcpHrv, gcHrv_keys: gcHrv ? Object.keys(gcHrv) : null },
+        _hv_debug:    hvDebug,
       };
     } catch (e) { wellness = { _error: e.message }; }
   }
