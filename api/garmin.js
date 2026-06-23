@@ -53,30 +53,49 @@ module.exports = async function handler(req, res) {
       const today = new Date();
       const dateStr = today.toISOString().split('T')[0];
 
-      // Get display name for endpoints that require it
       const profile = await gc.getUserProfile().catch(() => ({}));
-      const dn = profile?.displayName || profile?.userName || '';
+      const dn = profile?.displayName || profile?.userName || profile?.userProfileId || '';
 
-      const [hrR, sleepR, hrvR, stressR] = await Promise.allSettled([
+      const [hrR, sleepR, hrvR, stressR, bbR] = await Promise.allSettled([
         gc.getHeartRate(today),
         gc.getSleepData(today),
         gc.get(`${GC_API}/hrv-service/hrv/${dn}?startDate=${dateStr}&endDate=${dateStr}`),
-        gc.get(`${GC_API}/wellness-service/wellness/dailyStress/${dn}?date=${dateStr}`),
+        gc.get(`${GC_API}/stress-service/stress/summaryDetails/${dn}?startDate=${dateStr}&endDate=${dateStr}`),
+        gc.get(`${GC_API}/wellness-service/wellness/dailySummaryChart/${dn}?date=${dateStr}`),
       ]);
 
-      const hr  = val(hrR)    || {};
-      const sl  = val(sleepR) || {};
-      const hv  = val(hrvR)   || {};
-      const st  = val(stressR)|| {};
+      const hr  = val(hrR)     || {};
+      const sl  = val(sleepR)  || {};
+      const hv  = val(hrvR)    || {};
+      const st  = val(stressR) || {};
+      const bb  = val(bbR);
 
       const sleepSec = sl?.dailySleepDTO?.sleepTimeSeconds ?? sl?.sleepTimeSeconds ?? null;
 
+      // Body battery: daily chart returns array; grab latest non-null value
+      let bodyBattery = null;
+      if (Array.isArray(bb)) {
+        for (let i = bb.length - 1; i >= 0; i--) {
+          if (bb[i]?.bodyBattery != null) { bodyBattery = bb[i].bodyBattery; break; }
+          if (bb[i]?.value != null)        { bodyBattery = bb[i].value; break; }
+        }
+      }
+
       wellness = {
-        resting_hr: hr?.restingHeartRate ?? null,
-        hrv:        hv?.hrvSummary?.lastNight ?? hv?.lastNight ?? hv?.weeklyAvg ?? null,
-        stress:     st?.overallStressLevel ?? st?.avgStressLevel ?? null,
-        sleep:      sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
-        _raw: { hr, sl, hv, st, profile },
+        body_battery: bodyBattery,
+        resting_hr:   hr?.restingHeartRate ?? null,
+        hrv:          hv?.hrvSummary?.lastNight ?? hv?.lastNight ?? hv?.weeklyAvg ?? null,
+        stress:       st?.overallStressLevel ?? st?.avgStressLevel ?? null,
+        sleep:        sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
+        _dn:          dn,
+        _raw: {
+          hv_keys:  hv  ? Object.keys(hv)  : null,
+          st_keys:  st  ? Object.keys(st)  : null,
+          bb_sample: Array.isArray(bb) ? bb.slice(-3) : bb,
+          profile_keys: profile ? Object.keys(profile) : null,
+          profile_dn:   profile?.displayName,
+          profile_un:   profile?.userName,
+        },
       };
     } catch (e) { wellness = { _error: e.message }; }
   }
