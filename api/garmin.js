@@ -57,25 +57,36 @@ module.exports = async function handler(req, res) {
 
       const weekAgo = new Date(today - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-      const [summaryR, sleepR, hrvR] = await Promise.allSettled([
+      const [summaryR, sleepR] = await Promise.allSettled([
         gc.get(`${GC_API}/usersummary-service/usersummary/daily/${dn}?calendarDate=${dateStr}`),
         gc.getSleepData(today),
-        gc.get(`${GC_API}/hrv-service/hrv/${dn}?startDate=${weekAgo}&endDate=${dateStr}`),
       ]);
 
       const su = val(summaryR) || {};
       const sl = val(sleepR)   || {};
-      const hv = val(hrvR);
-
       const sleepSec = sl?.dailySleepDTO?.sleepTimeSeconds ?? sl?.sleepTimeSeconds ?? null;
 
-      // HRV: find most recent lastNight value from array or object
+      // Try HRV endpoints in order, expose first error for debugging
+      let hv = null, hvErr = null;
+      const hrvUrls = [
+        `${GC_API}/hrv-service/hrv?startDate=${weekAgo}&endDate=${dateStr}`,
+        `${GC_API}/hrv-service/hrv/${dn}?startDate=${weekAgo}&endDate=${dateStr}`,
+        `${GC_API}/wellness-service/wellness/hrv?calendarDate=${dateStr}`,
+      ];
+      for (const url of hrvUrls) {
+        try {
+          hv = await gc.get(url);
+          if (hv && (Array.isArray(hv.hrv) ? hv.hrv.length : Object.keys(hv).length)) break;
+        } catch (e) { hvErr = e.message; hv = null; }
+      }
+
+      // HRV: find most recent lastNight value
       let hrv = null;
       if (Array.isArray(hv?.hrv) && hv.hrv.length) {
         for (let i = hv.hrv.length - 1; i >= 0; i--) {
           const s = hv.hrv[i]?.hrvSummary;
           if (s?.lastNight != null) { hrv = s.lastNight; break; }
-          if (s?.weeklyAvg != null) { hrv = s.weeklyAvg; break; }
+          if (s?.weeklyAvg  != null) { hrv = s.weeklyAvg;  break; }
         }
       } else if (hv?.hrvSummary) {
         hrv = hv.hrvSummary?.lastNight ?? hv.hrvSummary?.weeklyAvg ?? null;
@@ -87,7 +98,7 @@ module.exports = async function handler(req, res) {
         hrv,
         stress:       su?.averageStressLevel ?? null,
         sleep:        sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
-        _hv_debug:    hv,
+        _hv_debug:    { hv, hvErr },
       };
     } catch (e) { wellness = { _error: e.message }; }
   }
