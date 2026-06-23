@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0b">
+<title>Performance Intelligence</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="topbar.js" defer></script>
+<style>
+:root {
+  --bg: #0a0a0b;
+  --bg-card: #111113;
+  --text-1: #fff;
+  --text-2: rgba(255,255,255,.6);
+  --text-3: rgba(255,255,255,.4);
+  --text-4: rgba(255,255,255,.22);
+  --border: rgba(255,255,255,.06);
+  --border-s: rgba(255,255,255,.14);
+  --good: #6ee7b7;
+  --warn: #fbbf24;
+  --bad: #ff8a8a;
+  --blue: #60a5fa;
+  --purple: #a78bfa;
+  --font: -apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,#14141a 0%,#0a0a0b 60%);
+  color:var(--text-1);font-family:var(--font);
+  -webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden;
+}
+.pi-wrap{max-width:480px;margin:0 auto;padding:14px 14px 110px}
+
+/* tabs */
+.pi-tabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-bottom:18px;padding-bottom:2px}
+.pi-tabs::-webkit-scrollbar{display:none}
+.pi-tab{flex-shrink:0;padding:8px 13px;border-radius:8px;font-size:11px;font-weight:700;
+  letter-spacing:.07em;border:none;cursor:pointer;
+  background:rgba(255,255,255,.06);color:var(--text-3);transition:all .15s;font-family:var(--font)}
+.pi-tab.active{background:rgba(255,255,255,.12);color:var(--text-1)}
+
+/* cards */
+.pi-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:15px;margin-bottom:11px}
+.pi-card-title{font-size:10px;font-weight:700;letter-spacing:.09em;color:var(--text-4);text-transform:uppercase;margin-bottom:12px}
+
+/* stats grid */
+.pi-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.pi-stats-4{grid-template-columns:repeat(4,1fr)}
+.pi-stat{background:rgba(255,255,255,.04);border-radius:10px;padding:10px 6px;text-align:center}
+.pi-stat-val{display:block;font-size:19px;font-weight:800;line-height:1;margin-bottom:4px}
+.pi-stat-lbl{display:block;font-size:10px;color:var(--text-3);font-weight:600;letter-spacing:.03em}
+
+/* chart */
+.pi-chart-wrap{position:relative;height:140px;margin:6px 0 2px}
+
+/* insight */
+.pi-insight{background:rgba(110,231,183,.06);border:1px solid rgba(110,231,183,.18);
+  border-radius:10px;padding:12px;margin-top:10px;font-size:13px;color:var(--good);line-height:1.55}
+.pi-insight.warn{background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.22);color:var(--warn)}
+.pi-insight.bad{background:rgba(255,138,138,.06);border-color:rgba(255,138,138,.22);color:var(--bad)}
+
+/* form */
+.pi-form-row{margin-bottom:13px}
+.pi-label{display:flex;justify-content:space-between;align-items:center;
+  font-size:13px;color:var(--text-2);margin-bottom:5px;font-weight:600}
+.pi-label-val{font-weight:800;color:var(--text-1);min-width:24px;text-align:right}
+.pi-range{width:100%;accent-color:var(--good);cursor:pointer}
+.pi-select,.pi-input,.pi-textarea{
+  width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border-s);
+  border-radius:8px;padding:10px 12px;color:var(--text-1);
+  font-family:var(--font);font-size:14px;appearance:none;
+  -webkit-appearance:none}
+.pi-select:focus,.pi-input:focus,.pi-textarea:focus{outline:none;border-color:rgba(255,255,255,.3)}
+.pi-textarea{resize:vertical;min-height:58px}
+input[type=date].pi-input{color-scheme:dark}
+
+/* buttons */
+.pi-btn{width:100%;padding:13px;border-radius:10px;border:none;font-family:var(--font);
+  font-size:14px;font-weight:700;cursor:pointer;
+  background:rgba(255,255,255,.09);color:var(--text-1);transition:background .15s;margin-top:4px}
+.pi-btn:active{background:rgba(255,255,255,.16)}
+.pi-btn.primary{background:linear-gradient(135deg,rgba(110,231,183,.18),rgba(96,165,250,.18));
+  border:1px solid rgba(110,231,183,.28);color:var(--good)}
+
+/* score */
+.pi-score-wrap{text-align:center;padding:10px 0 18px}
+.pi-score-num{font-size:64px;font-weight:900;line-height:1}
+.pi-score-num.high{color:var(--good)} .pi-score-num.medium{color:var(--warn)} .pi-score-num.low{color:var(--bad)}
+.pi-score-sub{font-size:12px;color:var(--text-4);letter-spacing:.08em;font-weight:700;margin-top:4px}
+
+/* session list */
+.pi-session{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid var(--border)}
+.pi-session:last-child{border-bottom:none}
+.pi-session-name{font-weight:700;font-size:14px}
+.pi-session-meta{font-size:12px;color:var(--text-3);margin-top:2px}
+.pi-session-right{font-size:12px;color:var(--text-2);flex-shrink:0;margin-left:10px}
+
+/* ranking */
+.pi-rank-item{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--border)}
+.pi-rank-item:last-child{border-bottom:none}
+.pi-rank-num{font-size:17px;font-weight:900;color:var(--text-4);min-width:22px}
+.pi-rank-name{font-weight:700;font-size:14px}
+.pi-rank-meta{font-size:12px;color:var(--text-3);margin-top:2px}
+.pi-rank-badge{margin-left:auto;padding:4px 9px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap}
+.pi-rank-badge.high{background:rgba(110,231,183,.12);color:var(--good)}
+.pi-rank-badge.medium{background:rgba(251,191,36,.12);color:var(--warn)}
+.pi-rank-badge.low{background:rgba(255,138,138,.12);color:var(--bad)}
+.pi-rank-badge.na{background:rgba(255,255,255,.06);color:var(--text-3)}
+
+/* coach */
+.pi-q-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px}
+.pi-q-btn{background:rgba(255,255,255,.06);border:1px solid var(--border-s);border-radius:10px;
+  padding:10px 12px;font-size:12px;color:var(--text-2);font-family:var(--font);
+  cursor:pointer;text-align:left;font-weight:600;transition:background .15s;line-height:1.4}
+.pi-q-btn:active{background:rgba(255,255,255,.12)}
+.pi-coach-answer{background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.16);
+  border-radius:10px;padding:14px;font-size:13px;color:var(--text-1);
+  line-height:1.65;min-height:90px;white-space:pre-wrap}
+
+/* fatigue alert */
+.pi-fatigue{background:rgba(255,138,138,.08);border:1px solid rgba(255,138,138,.25);
+  border-radius:12px;padding:15px;margin-bottom:12px;display:none}
+.pi-fatigue.show{display:block}
+.pi-fatigue-title{font-weight:800;font-size:14px;color:var(--bad);margin-bottom:6px}
+.pi-fatigue-body{font-size:13px;color:rgba(255,138,138,.8);line-height:1.55}
+
+/* baseline */
+.pi-bl-row{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.pi-bl-row:last-child{border-bottom:none}
+.pi-bl-label{color:var(--text-2);font-weight:600}
+.pi-bl-range{font-size:11px;color:var(--text-4);margin-top:2px}
+.pi-bl-today{font-weight:800}
+.pi-bl-today.ok{color:var(--good)} .pi-bl-today.warn{color:var(--warn)} .pi-bl-today.bad{color:var(--bad)}
+
+/* divider */
+.pi-div{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text-4);
+  text-transform:uppercase;margin:18px 0 9px}
+
+/* toggles */
+.pi-toggle-row{display:flex;gap:7px;margin-bottom:9px}
+.pi-toggle-btn{flex:1;padding:9px;border:1px solid var(--border-s);border-radius:8px;
+  background:transparent;color:var(--text-3);font-family:var(--font);font-size:13px;
+  font-weight:700;cursor:pointer;transition:all .15s}
+.pi-toggle-btn.active{background:rgba(255,255,255,.10);color:var(--text-1);border-color:rgba(255,255,255,.22)}
+
+/* exercise pills */
+.pi-ex-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px}
+.pi-ex-pill{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;
+  border:1px solid var(--border-s);background:transparent;color:var(--text-3);
+  cursor:pointer;transition:all .15s;font-family:var(--font)}
+.pi-ex-pill.active{background:rgba(255,255,255,.10);color:var(--text-1);border-color:rgba(255,255,255,.28)}
+
+/* cond fields */
+.pi-cond{display:none} .pi-cond.show{display:block}
+
+/* save msg */
+.pi-save-msg{text-align:center;font-size:13px;color:var(--good);margin-top:9px;height:18px}
+
+@media(max-width:380px){
+  .pi-q-grid{grid-template-columns:1fr}
+  .pi-stats-4{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="pi-wrap">
+
+  <div class="pi-tabs" id="piTabs">
+    <button class="pi-tab active" data-tab="strength">STRENGTH</button>
+    <button class="pi-tab" data-tab="health">HEALTH</button>
+    <button class="pi-tab" data-tab="readiness">READINESS</button>
+    <button class="pi-tab" data-tab="recovery">RECOVERY</button>
+    <button class="pi-tab" data-tab="insights">INSIGHTS</button>
+    <button class="pi-tab" data-tab="coach">COACH</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       STRENGTH
+  ════════════════════════════════════════════ -->
+  <div id="tab-strength">
+    <div class="pi-card">
+      <div class="pi-card-title">Track Exercise</div>
+      <div class="pi-ex-pills" id="exPills"></div>
+    </div>
+    <div class="pi-card">
+      <div class="pi-card-title">Current Performance</div>
+      <div class="pi-stats">
+        <div class="pi-stat"><span class="pi-stat-val" id="st1RM">—</span><span class="pi-stat-lbl">Est. 1RM</span></div>
+        <div class="pi-stat"><span class="pi-stat-val" id="stVol">—</span><span class="pi-stat-lbl">Wk Volume</span></div>
+        <div class="pi-stat"><span class="pi-stat-val" id="stPR">—</span><span class="pi-stat-lbl">Rep PR</span></div>
+      </div>
+    </div>
+    <div class="pi-card">
+      <div class="pi-card-title">Estimated 1RM Trend</div>
+      <div class="pi-chart-wrap"><canvas id="chart1RM"></canvas></div>
+    </div>
+    <div class="pi-card">
+      <div class="pi-card-title">Weekly Volume (kg)</div>
+      <div class="pi-chart-wrap"><canvas id="chartVol"></canvas></div>
+    </div>
+    <div id="stInsight" class="pi-insight" style="display:none"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       HEALTH
+  ════════════════════════════════════════════ -->
+  <div id="tab-health" style="display:none">
+    <div class="pi-card">
+      <div class="pi-card-title">Today</div>
+      <div class="pi-stats pi-stats-4">
+        <div class="pi-stat"><span class="pi-stat-val" id="hHR">—</span><span class="pi-stat-lbl">HR bpm</span></div>
+        <div class="pi-stat"><span class="pi-stat-val" id="hBB">—</span><span class="pi-stat-lbl">Battery</span></div>
+        <div class="pi-stat"><span class="pi-stat-val" id="hSleep">—</span><span class="pi-stat-lbl">Sleep</span></div>
+        <div class="pi-stat"><span class="pi-stat-val" id="hStress">—</span><span class="pi-stat-lbl">Stress</span></div>
+      </div>
+    </div>
+    <div class="pi-card">
+      <div class="pi-card-title">Resting HR Trend</div>
+      <div class="pi-chart-wrap"><canvas id="chartHR"></canvas></div>
+    </div>
+    <div class="pi-card">
+      <div class="pi-card-title">Sleep Trend</div>
+      <div class="pi-chart-wrap"><canvas id="chartSleep"></canvas></div>
+    </div>
+    <div class="pi-card">
+      <div class="pi-card-title">Body Battery Trend</div>
+      <div class="pi-chart-wrap"><canvas id="chartBB"></canvas></div>
+    </div>
+    <div id="healthInsight" class="pi-insight" style="display:none"></div>
+    <div class="pi-div">Personal Baselines (30-day)</div>
+    <div class="pi-card"><div id="blRows"><div style="color:var(--text-4);font-size:13px;text-align:center;padding:8px">Need 7+ days of data</div></div></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       READINESS
+  ════════════════════════════════════════════ -->
+  <div id="tab-readiness" style="display:none">
+    <div id="rdScoreCard" class="pi-card" style="display:none">
+      <div class="pi-card-title">Today's Readiness</div>
+      <div class="pi-score-wrap">
+        <div class="pi-score-num" id="rdScoreNum">—</div>
+        <div class="pi-score-sub">/ 100</div>
+      </div>
+      <div id="rdRec" class="pi-insight"></div>
+    </div>
+    <div id="rdForm" class="pi-card">
+      <div class="pi-card-title">How Are You Feeling?</div>
+      <div class="pi-form-row"><div class="pi-label">Energy<span class="pi-label-val" id="vEnergy">3</span></div><input type="range" class="pi-range" id="rEnergy" min="1" max="5" value="3"></div>
+      <div class="pi-form-row"><div class="pi-label">Muscle Soreness<span class="pi-label-val" id="vSoreness">3</span></div><input type="range" class="pi-range" id="rSoreness" min="1" max="5" value="3"></div>
+      <div class="pi-form-row"><div class="pi-label">Motivation<span class="pi-label-val" id="vMotivation">3</span></div><input type="range" class="pi-range" id="rMotivation" min="1" max="5" value="3"></div>
+      <div class="pi-form-row"><div class="pi-label">Mood<span class="pi-label-val" id="vMood">3</span></div><input type="range" class="pi-range" id="rMood" min="1" max="5" value="3"></div>
+      <div class="pi-form-row"><div class="pi-label">Stress Level<span class="pi-label-val" id="vStress">3</span></div><input type="range" class="pi-range" id="rStress" min="1" max="5" value="3"></div>
+      <div class="pi-form-row"><div class="pi-label">Joint Pain<span class="pi-label-val" id="vJoint">1</span></div><input type="range" class="pi-range" id="rJoint" min="1" max="5" value="1"></div>
+      <div class="pi-form-row"><div class="pi-label">Sleep Quality<span class="pi-label-val" id="vSleepQ">3</span></div><input type="range" class="pi-range" id="rSleepQ" min="1" max="5" value="3"></div>
+      <div class="pi-div">Quick Questions</div>
+      <div class="pi-form-row">
+        <div class="pi-label" style="margin-bottom:8px">Ready for a hard workout?</div>
+        <div class="pi-toggle-row"><button class="pi-toggle-btn active" id="rdyYes">Yes</button><button class="pi-toggle-btn" id="rdyNo">No</button></div>
+      </div>
+      <div class="pi-form-row">
+        <div class="pi-label" style="margin-bottom:7px">Any injuries or pain?</div>
+        <textarea class="pi-textarea" id="rdInjuries" placeholder="None"></textarea>
+      </div>
+      <button class="pi-btn primary" id="btnReadiness">Calculate My Readiness Score</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       RECOVERY
+  ════════════════════════════════════════════ -->
+  <div id="tab-recovery" style="display:none">
+    <div class="pi-card">
+      <div class="pi-card-title">Log Recovery Session</div>
+      <div class="pi-form-row">
+        <select class="pi-select" id="recMethod">
+          <option value="">Select method…</option>
+          <option value="sauna">Sauna</option>
+          <option value="cold_tub">Cold Tub</option>
+          <option value="hot_tub">Hot Tub</option>
+          <option value="red_light">Red Light Therapy</option>
+          <option value="foam_rolling">Foam Rolling</option>
+          <option value="ems">EMS Stimulation</option>
+        </select>
+      </div>
+      <div class="pi-form-row"><div class="pi-label">Date</div><input type="date" class="pi-input" id="recDate"></div>
+      <div class="pi-form-row">
+        <div class="pi-label">Timing</div>
+        <select class="pi-select" id="recTiming">
+          <option value="morning">Morning</option>
+          <option value="before_training">Before Training</option>
+          <option value="after_training">After Training</option>
+          <option value="evening">Evening</option>
+        </select>
+      </div>
+      <div class="pi-form-row"><div class="pi-label">Duration (min)<span class="pi-label-val" id="vDuration">20</span></div><input type="range" class="pi-range" id="recDuration" min="5" max="120" step="5" value="20"></div>
+
+      <div class="pi-cond" id="fSauna">
+        <div class="pi-form-row"><div class="pi-label">Temperature °C<span class="pi-label-val" id="vSaunaT">80</span></div><input type="range" class="pi-range" id="recSaunaT" min="60" max="110" step="5" value="80"></div>
+        <div class="pi-form-row"><div class="pi-label">Rounds<span class="pi-label-val" id="vSaunaR">3</span></div><input type="range" class="pi-range" id="recSaunaR" min="1" max="8" value="3"></div>
+      </div>
+      <div class="pi-cond" id="fCold">
+        <div class="pi-form-row"><div class="pi-label">Temperature °C<span class="pi-label-val" id="vColdT">12</span></div><input type="range" class="pi-range" id="recColdT" min="1" max="20" value="12"></div>
+      </div>
+      <div class="pi-cond" id="fHot">
+        <div class="pi-form-row"><div class="pi-label">Temperature °C<span class="pi-label-val" id="vHotT">38</span></div><input type="range" class="pi-range" id="recHotT" min="30" max="45" value="38"></div>
+      </div>
+      <div class="pi-cond" id="fRed">
+        <div class="pi-form-row"><div class="pi-label" style="margin-bottom:7px">Body Area</div><input type="text" class="pi-input" id="recRedArea" placeholder="e.g. Full body, Back, Legs"></div>
+      </div>
+      <div class="pi-cond" id="fFoam">
+        <div class="pi-form-row"><div class="pi-label" style="margin-bottom:7px">Muscle Group</div><input type="text" class="pi-input" id="recFoamMuscle" placeholder="e.g. Quads, Hamstrings"></div>
+      </div>
+      <div class="pi-cond" id="fEMS">
+        <div class="pi-form-row"><div class="pi-label" style="margin-bottom:7px">Muscle Group</div><input type="text" class="pi-input" id="recEMSMuscle" placeholder="e.g. Quads, Calves"></div>
+        <div class="pi-form-row"><div class="pi-label">Intensity<span class="pi-label-val" id="vEMSI">5</span></div><input type="range" class="pi-range" id="recEMSI" min="1" max="10" value="5"></div>
+      </div>
+
+      <div class="pi-form-row"><textarea class="pi-textarea" id="recNotes" placeholder="Notes (optional)"></textarea></div>
+      <button class="pi-btn primary" id="btnLogRec">Log Session</button>
+      <div class="pi-save-msg" id="recMsg"></div>
+    </div>
+    <div class="pi-div">Recent Sessions</div>
+    <div class="pi-card"><div id="recList"><div style="color:var(--text-4);font-size:13px;text-align:center;padding:8px">No sessions yet</div></div></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       INSIGHTS
+  ════════════════════════════════════════════ -->
+  <div id="tab-insights" style="display:none">
+    <div class="pi-div">Recovery Method Ranking</div>
+    <div class="pi-card"><div id="rankList"><div style="color:var(--text-4);font-size:13px;text-align:center;padding:8px">Log 3+ sessions to see rankings</div></div></div>
+    <div class="pi-div">Method Analysis</div>
+    <div id="methodCards"></div>
+    <div class="pi-div">Stack Analysis</div>
+    <div class="pi-card"><div id="stackText" style="font-size:13px;color:var(--text-4);padding:4px">Log multiple methods on the same day to see stack analysis.</div></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       COACH
+  ════════════════════════════════════════════ -->
+  <div id="tab-coach" style="display:none">
+    <div class="pi-fatigue" id="fatigueAlert">
+      <div class="pi-fatigue-title">⚠ Possible Fatigue Detected</div>
+      <div class="pi-fatigue-body" id="fatigueBody"></div>
+    </div>
+    <div class="pi-card">
+      <div class="pi-card-title">Ask Your Coach</div>
+      <div class="pi-q-grid">
+        <button class="pi-q-btn" data-q="train">Should I train today?</button>
+        <button class="pi-q-btn" data-q="weaker">Why am I weaker this week?</button>
+        <button class="pi-q-btn" data-q="recovery">Which recovery works best?</button>
+        <button class="pi-q-btn" data-q="overtrain">Am I overtraining?</button>
+        <button class="pi-q-btn" data-q="squat">When will I hit my squat goal?</button>
+        <button class="pi-q-btn" data-q="progress">How is my progress?</button>
+      </div>
+      <div class="pi-coach-answer" id="coachAnswer">Tap a question above to get a personalised answer based on your data.</div>
+    </div>
+  </div>
+
+</div><!-- /pi-wrap -->
+
+<script>
+(function(){
+'use strict';
+
+const SUPA_URL = 'https://mzhplwybcfppobsqwcmm.supabase.co';
+const SUPA_KEY = 'sb_publishable__ZwmxLQdrUIvTa6Y0zhDbw_2IXYke33';
+const LS_KEY   = 'po_coach_v1';
+
+let _supa = null;
+function db(){ return _supa || (_supa = supabase.createClient(SUPA_URL, SUPA_KEY)); }
+
+// shared state
+let garminToday = null;
+let garminHistory = [];
+let recSessions = [];
+
+// ─── Utility ────────────────────────────────────────────────────
+function todayStr(){ const d=new Date(); return d.toISOString().split('T')[0]; }
+function dlbl(s){ return new Date(s+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+function e1RM(w,r){ return r<=1?w:(w*r*0.0333)+w; }
+function weekKey(s){ const d=new Date(s+'T12:00:00'); const m=new Date(d); m.setDate(d.getDate()-((d.getDay()+6)%7)); return m.toISOString().split('T')[0]; }
+function loadWS(){ try{ return JSON.parse(localStorage.getItem(LS_KEY))||{}; }catch(e){ return {}; } }
+function avg(arr){ return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0; }
+function nil(v,u){ return v!=null?v+u:'—'; }
+
+const METHOD_LBL = {sauna:'Sauna',cold_tub:'Cold Tub',hot_tub:'Hot Tub',red_light:'Red Light',foam_rolling:'Foam Rolling',ems:'EMS'};
+
+// ─── Tabs ────────────────────────────────────────────────────────
+const TABS=['strength','health','readiness','recovery','insights','coach'];
+const initialized={};
+document.querySelectorAll('.pi-tab').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.pi-tab').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    const tab=btn.dataset.tab;
+    TABS.forEach(t=>{ document.getElementById('tab-'+t).style.display=t===tab?'block':'none'; });
+    if(!initialized[tab]){ initialized[tab]=true; INITS[tab](); }
+  });
+});
+
+// ─── Garmin API ──────────────────────────────────────────────────
+async function fetchGarminToday(){
+  if(garminToday) return garminToday;
+  try{ const r=await fetch('/api/garmin'); const d=await r.json(); garminToday=d.wellness||null; }catch(e){}
+  return garminToday;
+}
+async function fetchGarminHistory(){
+  if(garminHistory.length) return garminHistory;
+  try{ const {data}=await db().from('garmin_daily').select('*').order('date',{ascending:true}).limit(90); garminHistory=data||[]; }catch(e){}
+  return garminHistory;
+}
+async function saveGarminToday(w){
+  if(!w||!w.resting_hr) return;
+  try{ await db().from('garmin_daily').upsert({date:todayStr(),body_battery:w.body_battery,resting_hr:w.resting_hr,stress:w.stress,sleep_hours:w.sleep},{onConflict:'date'}); }catch(e){}
+}
+
+// ─────────────────────────────────────────────────────────────────
+// STRENGTH
+// ─────────────────────────────────────────────────────────────────
+const TARGET_EX=[
+  {key:'squat',   label:'Squat',            re:/squat/i},
+  {key:'rdl',     label:'Romanian Deadlift', re:/romanian|rdl/i},
+  {key:'bench',   label:'Bench Press',       re:/bench/i},
+];
+let stCharts={};
+let stSelEx=TARGET_EX[0];
+
+function getExLogs(state,re){
+  const exs=(state.exercises||[]).filter(e=>re.test(e.name));
+  const all=[];
+  exs.forEach(ex=>{ (state.logs&&state.logs[ex.id]||[]).forEach(l=>{ if(l.weight>0) all.push({date:l.date.split('T')[0],weight:l.weight,reps:l.reps}); }); });
+  return all.sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+function makeChart(id,label,labels,data,color){
+  if(stCharts[id]){ stCharts[id].destroy(); }
+  const ctx=document.getElementById(id);
+  if(!ctx||!data.length){ return; }
+  stCharts[id]=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'18',tension:.35,fill:true,pointRadius:2,pointHoverRadius:5}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'rgba(255,255,255,.3)',maxTicksLimit:6,font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{ticks:{color:'rgba(255,255,255,.3)',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}}
+      }
+    }
+  });
+}
+
+function renderStrength(ex){
+  const state=loadWS();
+  const logs=getExLogs(state,ex.re);
+  const u=state.units||'kg';
+
+  // stats
+  const best1RM=logs.length?Math.max(...logs.map(l=>e1RM(l.weight,l.reps))):0;
+  const wkCut=new Date(); wkCut.setDate(wkCut.getDate()-7);
+  const wkLogs=logs.filter(l=>new Date(l.date)>=wkCut);
+  const wkVol=wkLogs.reduce((s,l)=>s+l.weight*l.reps,0);
+  const repPR=logs.length?Math.max(...logs.map(l=>l.reps)):0;
+  document.getElementById('st1RM').textContent=best1RM?Math.round(best1RM)+u:'—';
+  document.getElementById('stVol').textContent=wkVol?Math.round(wkVol)+u:'—';
+  document.getElementById('stPR').textContent=repPR||'—';
+
+  // 1RM chart — last 30 sets
+  const last30=logs.slice(-30);
+  makeChart('chart1RM','1RM',last30.map(l=>dlbl(l.date)),last30.map(l=>Math.round(e1RM(l.weight,l.reps))),'#6ee7b7');
+
+  // Volume chart — weekly
+  const byWk={};
+  logs.forEach(l=>{ const w=weekKey(l.date); byWk[w]=(byWk[w]||0)+l.weight*l.reps; });
+  const volData=Object.entries(byWk).sort((a,b)=>a[0].localeCompare(b[0])).slice(-14);
+  makeChart('chartVol','Volume',volData.map(v=>dlbl(v[0])),volData.map(v=>Math.round(v[1])),'#60a5fa');
+
+  // insight
+  const insEl=document.getElementById('stInsight');
+  if(logs.length>=6){
+    const half=Math.floor(logs.length/2);
+    const first=logs.slice(0,half); const last=logs.slice(half);
+    const f1=avg(first.map(l=>e1RM(l.weight,l.reps)));
+    const l1=avg(last.map(l=>e1RM(l.weight,l.reps)));
+    const delta=l1-f1; const pct=Math.round(delta/f1*100);
+    const weeks=Math.round((new Date(logs[logs.length-1].date)-new Date(logs[0].date))/(7*86400000));
+    if(Math.abs(delta)<0.5){ insEl.textContent='Your '+ex.label+' 1RM has been consistent over '+weeks+' weeks. Consider adding volume or a deload to break through.'; insEl.className='pi-insight warn'; }
+    else if(delta>0){ insEl.textContent='Your '+ex.label+' estimated 1RM improved '+pct+'% over '+weeks+' weeks — solid progression.'; insEl.className='pi-insight'; }
+    else{ insEl.textContent='Your '+ex.label+' 1RM declined '+Math.abs(pct)+'% over '+weeks+' weeks. Check recovery, sleep, and session frequency.'; insEl.className='pi-insight bad'; }
+    insEl.style.display='block';
+  } else {
+    insEl.style.display='none';
+  }
+}
+
+function initStrength(){
+  const pills=document.getElementById('exPills');
+  pills.innerHTML='';
+  TARGET_EX.forEach(function(ex,i){
+    const btn=document.createElement('button');
+    btn.className='pi-ex-pill'+(i===0?' active':'');
+    btn.textContent=ex.label;
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('.pi-ex-pill').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      stSelEx=ex; renderStrength(ex);
+    });
+    pills.appendChild(btn);
+  });
+  renderStrength(stSelEx);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// HEALTH
+// ─────────────────────────────────────────────────────────────────
+let hCharts={};
+
+function makeHealthChart(id,label,history,field,color){
+  if(hCharts[id]){ hCharts[id].destroy(); }
+  const ctx=document.getElementById(id); if(!ctx) return;
+  const pts=history.filter(d=>d[field]!=null);
+  if(pts.length<2) return;
+  hCharts[id]=new Chart(ctx,{
+    type:'line',
+    data:{labels:pts.map(d=>dlbl(d.date)),datasets:[{label,data:pts.map(d=>d[field]),borderColor:color,backgroundColor:color+'18',tension:.35,fill:true,pointRadius:2}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'rgba(255,255,255,.3)',maxTicksLimit:6,font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{ticks:{color:'rgba(255,255,255,.3)',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}}
+      }
+    }
+  });
+}
+
+function renderBaselines(history,todayW){
+  const el=document.getElementById('blRows');
+  if(history.length<7){ el.innerHTML='<div style="color:var(--text-4);font-size:13px;text-align:center;padding:8px">Need 7+ days of Garmin data to calculate baselines.</div>'; return; }
+  const FIELDS=[
+    {key:'resting_hr',   label:'Resting HR',    unit:' bpm', bad:true},
+    {key:'body_battery', label:'Body Battery',   unit:'',     bad:false},
+    {key:'sleep_hours',  label:'Sleep',          unit:'h',    bad:false},
+    {key:'stress',       label:'Stress',         unit:'',     bad:true},
+  ];
+  const w=todayW||{};
+  el.innerHTML=FIELDS.map(function(f){
+    const vals=history.filter(d=>d[f.key]!=null).map(d=>d[f.key]);
+    if(!vals.length) return '';
+    const sorted=[...vals].sort((a,b)=>a-b);
+    const lo=sorted[Math.floor(sorted.length*.25)]; const hi=sorted[Math.floor(sorted.length*.75)];
+    const todayV=w[f.key];
+    const fmtV=v=>f.key==='sleep_hours'?v.toFixed(1):Math.round(v);
+    let cls='';
+    if(todayV!=null){
+      const avgV=avg(vals);
+      const pct=(todayV-avgV)/avgV*100;
+      cls=f.bad?(pct>12?'bad':pct<-8?'ok':'warn'):(pct<-12?'bad':pct>8?'ok':'warn');
+    }
+    return '<div class="pi-bl-row"><div><div class="pi-bl-label">'+f.label+'</div><div class="pi-bl-range">Normal: '+fmtV(lo)+'–'+fmtV(hi)+f.unit+'</div></div><div class="pi-bl-today '+cls+'">'+(todayV!=null?fmtV(todayV)+f.unit:'—')+'</div></div>';
+  }).join('');
+}
+
+function renderHealthInsight(history){
+  if(history.length<10) return;
+  const el=document.getElementById('healthInsight');
+  const r7=history.slice(-7); const p7=history.slice(-14,-7);
+  if(p7.length<4){ el.style.display='none'; return; }
+  const avgSleep=arr=>avg(arr.filter(d=>d.sleep_hours).map(d=>d.sleep_hours));
+  const avgHR=arr=>avg(arr.filter(d=>d.resting_hr).map(d=>d.resting_hr));
+  const sd=(avgSleep(r7)-avgSleep(p7))/avgSleep(p7)*100;
+  const hd=(avgHR(r7)-avgHR(p7))/avgHR(p7)*100;
+  let txt,cls='';
+  if(hd>10&&sd<-10){ txt='Resting HR up '+Math.round(hd)+'% and sleep down '+Math.round(Math.abs(sd))+'% vs last week — signs of under-recovery.'; cls='bad'; }
+  else if(hd<-5&&sd>5){ txt='Resting HR down '+Math.round(Math.abs(hd))+'% and sleep improved '+Math.round(sd)+'% vs last week — good recovery trend.'; }
+  else if(sd<-15){ txt='Sleep is down '+Math.round(Math.abs(sd))+'% vs last week. Prioritise sleep quality and reduce evening stress.'; cls='warn'; }
+  else if(hd>10){ txt='Resting HR is up '+Math.round(hd)+'% vs last week. Consider a deload or extra recovery day.'; cls='warn'; }
+  else{ txt='Health metrics are stable — HR and sleep consistent over the past 2 weeks.'; }
+  el.textContent=txt; el.className='pi-insight'+(cls?' '+cls:''); el.style.display='block';
+}
+
+async function initHealth(){
+  const [w]=await Promise.all([fetchGarminToday(),fetchGarminHistory()]);
+  if(w) saveGarminToday(w);
+  document.getElementById('hHR').textContent    =w&&w.resting_hr!=null?Math.round(w.resting_hr)+' bpm':'—';
+  document.getElementById('hBB').textContent    =w&&w.body_battery!=null?Math.round(w.body_battery):'—';
+  document.getElementById('hSleep').textContent =w&&w.sleep!=null?w.sleep.toFixed(1)+'h':'—';
+  document.getElementById('hStress').textContent=w&&w.stress!=null?Math.round(w.stress):'—';
+  makeHealthChart('chartHR',   'Resting HR',   garminHistory,'resting_hr',  '#ff8a8a');
+  makeHealthChart('chartSleep','Sleep (h)',     garminHistory,'sleep_hours', '#a78bfa');
+  makeHealthChart('chartBB',   'Body Battery', garminHistory,'body_battery','#6ee7b7');
+  renderBaselines(garminHistory,w);
+  renderHealthInsight(garminHistory);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// READINESS
+// ─────────────────────────────────────────────────────────────────
+const SLIDERS=[
+  ['rEnergy','vEnergy','energy'],[' rSoreness','vSoreness','muscle_soreness'],
+  ['rMotivation','vMotivation','motivation'],['rMood','vMood','mood'],
+  ['rStress','vStress','stress'],['rJoint','vJoint','joint_pain'],['rSleepQ','vSleepQ','sleep_quality']
+];
+
+function scoreClass(s){ return s>=75?'high':s>=50?'medium':'low'; }
+function readinessRec(s){
+  if(s>=75) return {txt:'High readiness — push performance today. Good conditions for a heavy or high-intensity session.',cls:''};
+  if(s>=50) return {txt:'Normal readiness — train as planned at moderate intensity. Listen to your body.',cls:'warn'};
+  return {txt:'Low readiness — consider a recovery session, reduced volume, or full rest day. Pushing hard today risks regression.',cls:'bad'};
+}
+
+function showReadinessScore(score){
+  const num=document.getElementById('rdScoreNum');
+  num.textContent=score; num.className='pi-score-num '+scoreClass(score);
+  const rec=readinessRec(score);
+  const recEl=document.getElementById('rdRec');
+  recEl.textContent=rec.txt; recEl.className='pi-insight'+(rec.cls?' '+rec.cls:'');
+  document.getElementById('rdScoreCard').style.display='block';
+  document.getElementById('rdForm').style.display='none';
+}
+
+function calcScore(vals,g){
+  const pos=['energy','motivation','mood','sleep_quality'];
+  const neg=['muscle_soreness','stress','joint_pain'];
+  let sub=0;
+  pos.forEach(k=>{ sub+=(vals[k]-1)/4; });
+  neg.forEach(k=>{ sub+=(5-vals[k])/4; });
+  sub/=7;
+  if(!vals.feels_ready) sub*=0.85;
+
+  let gar=0.5,gw=0;
+  const gh=garminHistory;
+  const g30hr=gh.length>=7?avg(gh.slice(-30).filter(d=>d.resting_hr).map(d=>d.resting_hr)):0;
+  if(g&&g.sleep!=null){ gar+=(Math.min(g.sleep,9)-5)/4*0.25; gw+=0.25; }
+  if(g&&g.body_battery!=null){ gar+=g.body_battery/100*0.15; gw+=0.15; }
+  if(g&&g.stress!=null){ gar+=(1-g.stress/100)*0.10; gw+=0.10; }
+  if(g&&g.resting_hr!=null&&g30hr>0){ const hf=Math.max(0,Math.min(1,1-(g.resting_hr-g30hr*0.9)/(g30hr*0.3))); gar+=hf*0.15; gw+=0.15; }
+  if(gw>0) gar=gar/(0.5+gw)*gw+0.5*(1-gw);
+
+  return Math.max(5,Math.min(100,Math.round(sub*0.4+gar*0.6)*100/100));
+}
+
+async function initReadiness(){
+  // wire sliders
+  SLIDERS.forEach(function([sid,vid]){
+    const el=document.getElementById(sid.trim()); if(!el) return;
+    const vel=document.getElementById(vid); if(!vel) return;
+    el.addEventListener('input',()=>{ vel.textContent=el.value; });
+  });
+
+  let feelsReady=true;
+  document.getElementById('rdyYes').addEventListener('click',function(){ feelsReady=true; this.classList.add('active'); document.getElementById('rdyNo').classList.remove('active'); });
+  document.getElementById('rdyNo').addEventListener('click',function(){ feelsReady=false; this.classList.add('active'); document.getElementById('rdyYes').classList.remove('active'); });
+
+  // check if already done today
+  try{
+    const {data}=await db().from('readiness').select('readiness_score').eq('date',todayStr()).maybeSingle();
+    if(data) { showReadinessScore(data.readiness_score); return; }
+  }catch(e){}
+
+  document.getElementById('btnReadiness').addEventListener('click',async function(){
+    const vals={feels_ready:feelsReady,injuries:document.getElementById('rdInjuries').value};
+    SLIDERS.forEach(function([sid,,key]){ const el=document.getElementById(sid.trim()); if(el) vals[key]=parseInt(el.value); });
+    await fetchGarminToday();
+    await fetchGarminHistory();
+    const score=calcScore(vals,garminToday);
+    try{
+      await db().from('readiness').upsert({date:todayStr(),...vals,readiness_score:score},{onConflict:'date'});
+    }catch(e){}
+    showReadinessScore(score);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// RECOVERY
+// ─────────────────────────────────────────────────────────────────
+const COND_MAP={sauna:'fSauna',cold_tub:'fCold',hot_tub:'fHot',red_light:'fRed',foam_rolling:'fFoam',ems:'fEMS'};
+
+async function loadRecSessions(){
+  try{
+    const {data}=await db().from('recovery_sessions').select('*').order('date',{ascending:false}).limit(15);
+    recSessions=data||[];
+  }catch(e){ recSessions=[]; }
+  const el=document.getElementById('recList');
+  if(!recSessions.length){ el.innerHTML='<div style="color:var(--text-4);font-size:13px;text-align:center;padding:8px">No sessions yet</div>'; return; }
+  el.innerHTML=recSessions.map(function(s){
+    let meta=s.duration_minutes+' min';
+    if(s.temperature) meta+=' · '+s.temperature+'°C';
+    if(s.timing) meta+=' · '+s.timing.replace('_',' ');
+    return '<div class="pi-session"><div><div class="pi-session-name">'+(METHOD_LBL[s.method]||s.method)+'</div><div class="pi-session-meta">'+meta+'</div></div><div class="pi-session-right">'+dlbl(s.date)+'</div></div>';
+  }).join('');
+}
+
+function initRecovery(){
+  document.getElementById('recDate').value=todayStr();
+
+  // sliders
+  [['recDuration','vDuration'],['recSaunaT','vSaunaT'],['recSaunaR','vSaunaR'],['recColdT','vColdT'],['recHotT','vHotT'],['recEMSI','vEMSI']].forEach(function([sid,vid]){
+    const el=document.getElementById(sid); if(el) el.addEventListener('input',()=>{ document.getElementById(vid).textContent=el.value; });
+  });
+
+  // method toggle
+  document.getElementById('recMethod').addEventListener('change',function(){
+    document.querySelectorAll('.pi-cond').forEach(f=>f.classList.remove('show'));
+    const fid=COND_MAP[this.value]; if(fid) document.getElementById(fid).classList.add('show');
+  });
+
+  // log button
+  document.getElementById('btnLogRec').addEventListener('click',async function(){
+    const method=document.getElementById('recMethod').value;
+    if(!method){ alert('Select a recovery method'); return; }
+    const s={date:document.getElementById('recDate').value,method,duration_minutes:parseInt(document.getElementById('recDuration').value),timing:document.getElementById('recTiming').value,notes:document.getElementById('recNotes').value};
+    if(method==='sauna'){ s.temperature=parseInt(document.getElementById('recSaunaT').value); s.rounds=parseInt(document.getElementById('recSaunaR').value); }
+    if(method==='cold_tub') s.temperature=parseInt(document.getElementById('recColdT').value);
+    if(method==='hot_tub') s.temperature=parseInt(document.getElementById('recHotT').value);
+    if(method==='red_light') s.body_area=document.getElementById('recRedArea').value;
+    if(method==='foam_rolling') s.muscle_group=document.getElementById('recFoamMuscle').value;
+    if(method==='ems'){ s.muscle_group=document.getElementById('recEMSMuscle').value; s.intensity=parseInt(document.getElementById('recEMSI').value); }
+    try{
+      await db().from('recovery_sessions').insert([s]);
+      const msg=document.getElementById('recMsg'); msg.textContent='Saved!'; setTimeout(()=>{ msg.textContent=''; },2000);
+      loadRecSessions();
+    }catch(e){ alert('Error: '+e.message); }
+  });
+
+  loadRecSessions();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// INSIGHTS
+// ─────────────────────────────────────────────────────────────────
+async function initInsights(){
+  await Promise.all([fetchGarminHistory(),loadRecSessions()]);
+  const sessions=recSessions.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const byDate={};
+  garminHistory.forEach(d=>{ byDate[d.date]=d; });
+
+  const stats={};
+  sessions.forEach(function(s){
+    const nd=new Date(s.date+'T12:00:00'); nd.setDate(nd.getDate()+1);
+    const nk=nd.toISOString().split('T')[0];
+    const next=byDate[nk]; const prev=byDate[s.date];
+    if(!next||!prev) return;
+    const m=s.method;
+    if(!stats[m]) stats[m]={n:0,hrD:0,bbD:0,slD:0,stD:0};
+    const st=stats[m]; st.n++;
+    if(next.resting_hr&&prev.resting_hr) st.hrD+=(next.resting_hr-prev.resting_hr)/prev.resting_hr*100;
+    if(next.body_battery&&prev.body_battery) st.bbD+=next.body_battery-prev.body_battery;
+    if(next.sleep_hours&&prev.sleep_hours) st.slD+=next.sleep_hours-prev.sleep_hours;
+    if(next.stress&&prev.stress) st.stD+=(next.stress-prev.stress)/prev.stress*100;
+  });
+
+  const methods=Object.entries(stats).filter(([,s])=>s.n>=2).map(function([method,s]){
+    const n=s.n;
+    const score=(-s.hrD/n*.35)+(s.bbD/n*.35)+(s.slD/n*20)+(-s.stD/n*.30);
+    return {method,n,score,hrD:s.hrD/n,bbD:s.bbD/n,slD:s.slD/n};
+  }).sort((a,b)=>b.score-a.score);
+
+  // ranking
+  const rankEl=document.getElementById('rankList');
+  if(!methods.length){
+    rankEl.innerHTML='<div style="color:var(--text-4);font-size:13px;text-align:center;padding:8px">Log at least 3 sessions across different dates to see rankings. Data needs next-day Garmin to compare.</div>';
+  } else {
+    rankEl.innerHTML=methods.map(function(m,i){
+      const b=m.score>1?{cls:'high',lbl:'High Impact'}:m.score>0?{cls:'medium',lbl:'Medium Impact'}:{cls:'low',lbl:'Low Impact'};
+      return '<div class="pi-rank-item"><div class="pi-rank-num">'+(i+1)+'</div><div><div class="pi-rank-name">'+(METHOD_LBL[m.method]||m.method)+'</div><div class="pi-rank-meta">'+m.n+' sessions</div></div><span class="pi-rank-badge '+b.cls+'">'+b.lbl+'</span></div>';
+    }).join('');
+  }
+
+  // method cards
+  const cardsEl=document.getElementById('methodCards');
+  cardsEl.innerHTML=methods.slice(0,4).map(function(m){
+    const parts=[];
+    if(Math.abs(m.hrD)>1) parts.push('HR '+(m.hrD<0?'↓ '+Math.abs(m.hrD).toFixed(1)+'%':'↑ '+m.hrD.toFixed(1)+'%'));
+    if(Math.abs(m.bbD)>2) parts.push('Battery '+(m.bbD>0?'+':'')+m.bbD.toFixed(0));
+    if(Math.abs(m.slD)>.15) parts.push('Sleep '+(m.slD>0?'+':'')+m.slD.toFixed(1)+'h');
+    const insight=m.score>1?'Strong positive impact on next-day recovery.':m.score>0?'Moderate benefit observed.':'Neutral or mixed results so far.';
+    return '<div class="pi-card"><div class="pi-card-title">'+(METHOD_LBL[m.method]||m.method)+' — '+m.n+' sessions</div>'+
+      '<div style="font-size:13px;color:var(--text-2);margin-bottom:8px">'+(parts.join(' · ')||'More data needed')+'</div>'+
+      '<div class="pi-insight" style="margin-top:0;font-size:12px">'+insight+'</div></div>';
+  }).join('');
+  if(!methods.length) cardsEl.innerHTML='<div class="pi-card" style="color:var(--text-4);font-size:13px;text-align:center;padding:12px">Not enough paired data yet. Sessions need matching next-day Garmin readings.</div>';
+
+  // stack analysis
+  const sameDay={};
+  sessions.forEach(s=>{ (sameDay[s.date]=sameDay[s.date]||[]).push(s.method); });
+  const stacks=Object.entries(sameDay).filter(([,arr])=>arr.length>=2);
+  const stackEl=document.getElementById('stackText');
+  if(stacks.length<2){
+    stackEl.textContent='Log multiple recovery methods on the same day to see stack analysis.';
+    stackEl.style.color='var(--text-4)';
+  } else {
+    const combos={};
+    stacks.forEach(([,arr])=>{ const k=[...arr].sort().join('+'); combos[k]=(combos[k]||0)+1; });
+    const top=Object.entries(combos).sort((a,b)=>b[1]-a[1])[0];
+    const topMethods=top[0].split('+').map(m=>METHOD_LBL[m]||m).join(' + ');
+    stackEl.textContent='Most used stack: '+topMethods+' (used '+top[1]+' times). Keep logging combinations to reveal which stacks produce the best next-day recovery.';
+    stackEl.style.color='var(--text-2)';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FATIGUE DETECTION
+// ─────────────────────────────────────────────────────────────────
+function detectFatigue(history){
+  if(history.length<8) return null;
+  const recent=history.slice(-5);
+  const base=history.slice(-35,-5);
+  if(base.length<5) return null;
+  const aHR=arr=>avg(arr.filter(d=>d.resting_hr).map(d=>d.resting_hr));
+  const aSl=arr=>avg(arr.filter(d=>d.sleep_hours).map(d=>d.sleep_hours));
+  const aBB=arr=>avg(arr.filter(d=>d.body_battery).map(d=>d.body_battery));
+  const rHR=aHR(recent),bHR=aHR(base);
+  const rSl=aSl(recent),bSl=aSl(base);
+  const rBB=aBB(recent),bBB=aBB(base);
+  const signals=[];
+  if(bHR>0&&rHR>bHR*1.08) signals.push('Resting HR '+Math.round((rHR/bHR-1)*100)+'% above baseline');
+  if(bSl>0&&rSl<bSl*0.87) signals.push('Sleep '+Math.round((1-rSl/bSl)*100)+'% below normal');
+  if(bBB>0&&rBB<bBB*0.80) signals.push('Body battery '+Math.round((1-rBB/bBB)*100)+'% below normal');
+  return signals.length>=2?signals:null;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COACH
+// ─────────────────────────────────────────────────────────────────
+async function initCoach(){
+  await Promise.all([fetchGarminToday(),fetchGarminHistory(),loadRecSessions()]);
+  let readinessData=null;
+  try{ const {data}=await db().from('readiness').select('*').eq('date',todayStr()).maybeSingle(); readinessData=data; }catch(e){}
+
+  const fatigueSignals=detectFatigue(garminHistory);
+  if(fatigueSignals){
+    const alert=document.getElementById('fatigueAlert'); alert.classList.add('show');
+    document.getElementById('fatigueBody').textContent=fatigueSignals.join(' · ')+'.\n\nRecommendation: Reduce intensity by ~20% and prioritise recovery over the next 2–3 days.';
+  }
+
+  const g=garminToday||{};
+  const score=readinessData?readinessData.readiness_score:null;
+  const state=loadWS();
+
+  function answer(q){
+    switch(q){
+      case 'train':{
+        const lines=[];
+        if(score!=null) lines.push('Readiness score: '+score+'/100.');
+        if(g.sleep!=null) lines.push('Sleep last night: '+g.sleep.toFixed(1)+'h.');
+        if(g.body_battery!=null) lines.push('Body battery: '+Math.round(g.body_battery)+'.');
+        if(g.resting_hr!=null) lines.push('Resting HR: '+Math.round(g.resting_hr)+' bpm.');
+        lines.push('');
+        if(fatigueSignals) lines.push('⚠ Fatigue detected: '+fatigueSignals.join(', ')+'.\n\nRecommendation: Active recovery or reduced volume today.');
+        else if(score!=null&&score>=75) lines.push('Recommendation: Strong conditions for a hard session — push performance today.');
+        else if(score!=null&&score>=50) lines.push('Recommendation: Train as planned at normal intensity.');
+        else if(score!=null) lines.push('Recommendation: Keep it light or rest. Your body needs recovery.');
+        else if((g.body_battery||0)>=60) lines.push('Recommendation: Body battery is solid. Good to train.');
+        else lines.push('Recommendation: Body battery is low. Consider reduced volume or rest.');
+        return lines.join('\n');
+      }
+      case 'weaker':{
+        const lines=['Analysing your data for causes…'];
+        const r7=garminHistory.slice(-7);
+        const sl7=avg(r7.filter(d=>d.sleep_hours).map(d=>d.sleep_hours));
+        if(sl7>0&&sl7<6.5) lines.push('• Sleep avg this week: '+sl7.toFixed(1)+'h — below the 7–8h threshold. Sleep deprivation reduces strength output 5–15%.');
+        if(g.stress!=null&&g.stress>65) lines.push('• Stress is elevated ('+Math.round(g.stress)+'). High cortisol suppresses muscle recruitment and slows recovery.');
+        if(fatigueSignals) lines.push('• Fatigue signals: '+fatigueSignals.join(', ')+'.');
+        let recentSets=0;
+        const cut=new Date(); cut.setDate(cut.getDate()-5);
+        (state.exercises||[]).forEach(ex=>{ (state.logs&&state.logs[ex.id]||[]).forEach(l=>{ if(new Date(l.date)>=cut) recentSets++; }); });
+        if(recentSets>18) lines.push('• High session density this week ('+recentSets+' logged sets in 5 days). Insufficient recovery between sessions reduces performance.');
+        if(lines.length===1) lines.push('• No clear cause found in current data. Ensure Garmin is syncing and keep logging sessions for better analysis.');
+        return lines.join('\n');
+      }
+      case 'recovery':{
+        if(!recSessions.length) return 'No recovery sessions logged yet. Use the RECOVERY tab to start tracking.';
+        const counts={};
+        recSessions.forEach(s=>{ counts[s.method]=(counts[s.method]||0)+1; });
+        const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+        return 'Your logged recovery sessions:\n\n'+sorted.map(([m,n])=>'• '+(METHOD_LBL[m]||m)+': '+n+' sessions').join('\n')+'\n\nOpen INSIGHTS to see which methods correlate with better next-day body battery, HR, and sleep.';
+      }
+      case 'overtrain':{
+        if(fatigueSignals) return '⚠ Yes — multiple fatigue signals detected:\n\n'+fatigueSignals.map(s=>'• '+s).join('\n')+'\n\nAction: Take 2–3 lower-intensity days. Prioritise sleep, nutrition, and recovery methods.';
+        const r5=garminHistory.slice(-5);
+        const bb5=avg(r5.filter(d=>d.body_battery).map(d=>d.body_battery));
+        if(bb5>60) return 'No clear signs of overtraining. Body battery has averaged '+bb5.toFixed(0)+' over the past 5 days — within a healthy range. Keep monitoring.';
+        if(bb5>0) return 'Body battery has been low (avg '+bb5.toFixed(0)+'/100 over 5 days). Not definitive overtraining, but watch resting HR. If it stays elevated, reduce volume.';
+        return 'Not enough Garmin data to assess. Enable Garmin sync and check back after a few days of data.';
+      }
+      case 'squat':{
+        const logs=getExLogs(state,/squat/i);
+        if(logs.length<4) return 'Log at least 4 squat sessions to enable goal projection.';
+        const last=logs.slice(-4); const prev=logs.slice(-8,-4);
+        const r1RM=avg(last.map(l=>e1RM(l.weight,l.reps)));
+        const p1RM=prev.length?avg(prev.map(l=>e1RM(l.weight,l.reps))):null;
+        if(!p1RM) return 'Current squat estimated 1RM: '+Math.round(r1RM)+(state.units||'kg')+'. Log more sessions to project a timeline.';
+        const gain=(r1RM-p1RM)/4;
+        if(gain<=0) return 'Squat 1RM is at ~'+Math.round(r1RM)+(state.units||'kg')+' and hasn\'t increased recently.\n\nFocus on: consistent sleep, adequate protein, and progressive overload.';
+        const target=r1RM*1.10;
+        const weeks=Math.ceil((target-r1RM)/gain);
+        return 'Current squat: ~'+Math.round(r1RM)+(state.units||'kg')+'\nRate of gain: ~'+gain.toFixed(1)+(state.units||'kg')+'/week\n\nAt this rate, you\'d reach '+Math.round(target)+(state.units||'kg')+' (10% above current) in approximately '+weeks+' weeks.\n\nBiggest lever: consistent sleep quality and session frequency.';
+      }
+      case 'progress':{
+        const u=state.units||'kg';
+        const lines=['Current performance summary:\n'];
+        TARGET_EX.forEach(ex=>{
+          const logs=getExLogs(state,ex.re);
+          if(!logs.length){ lines.push('• '+ex.label+': no sessions logged'); return; }
+          const best=Math.max(...logs.map(l=>e1RM(l.weight,l.reps)));
+          const rec3=logs.slice(-3);
+          const rec=Math.max(...rec3.map(l=>e1RM(l.weight,l.reps)));
+          const trend=rec>=best*.98?'↑ at peak':rec<best*.92?'↓ below peak':'→ holding';
+          lines.push('• '+ex.label+': ~'+Math.round(rec)+u+' 1RM ('+trend+')');
+        });
+        if(g.sleep!=null) lines.push('\nSleep: '+g.sleep.toFixed(1)+'h | Battery: '+Math.round(g.body_battery||0));
+        if(score!=null) lines.push('Readiness: '+score+'/100');
+        if(fatigueSignals) lines.push('\n⚠ Fatigue signals detected — recovery should be a priority.');
+        return lines.join('\n');
+      }
+      default: return 'Tap a question above.';
+    }
+  }
+
+  document.querySelectorAll('.pi-q-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{ document.getElementById('coachAnswer').textContent=answer(btn.dataset.q); });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// INIT MAP & BOOT
+// ─────────────────────────────────────────────────────────────────
+const INITS={
+  strength: initStrength,
+  health:   initHealth,
+  readiness:initReadiness,
+  recovery: initRecovery,
+  insights: initInsights,
+  coach:    initCoach,
+};
+
+document.addEventListener('DOMContentLoaded',function(){
+  initialized['strength']=true;
+  initStrength();
+});
+
+})();
+</script>
+</body>
+</html>
