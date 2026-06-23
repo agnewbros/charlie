@@ -66,17 +66,19 @@ module.exports = async function handler(req, res) {
       const sl = val(sleepR)   || {};
       const sleepSec = sl?.dailySleepDTO?.sleepTimeSeconds ?? sl?.sleepTimeSeconds ?? null;
 
-      // Try HRV endpoints in order, expose first error for debugging
+      // HRV service lives on the modern proxy, not connectapi
+      const PROXY = 'https://connect.garmin.com/modern/proxy';
       let hv = null, hvErr = null;
       const hrvUrls = [
-        `${GC_API}/hrv-service/hrv?startDate=${weekAgo}&endDate=${dateStr}`,
+        `${PROXY}/hrv-service/hrv/${dn}?startDate=${weekAgo}&endDate=${dateStr}`,
+        `${PROXY}/hrv-service/hrv?startDate=${weekAgo}&endDate=${dateStr}`,
         `${GC_API}/hrv-service/hrv/${dn}?startDate=${weekAgo}&endDate=${dateStr}`,
-        `${GC_API}/wellness-service/wellness/hrv?calendarDate=${dateStr}`,
       ];
       for (const url of hrvUrls) {
         try {
           hv = await gc.get(url);
-          if (hv && (Array.isArray(hv.hrv) ? hv.hrv.length : Object.keys(hv).length)) break;
+          if (hv && (Array.isArray(hv?.hrv) ? hv.hrv.length : Object.keys(hv).length)) break;
+          hv = null;
         } catch (e) { hvErr = e.message; hv = null; }
       }
 
