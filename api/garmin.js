@@ -45,7 +45,8 @@ module.exports = async function handler(req, res) {
 
   // Wellness from garmin-connect (requires env vars)
   let wellness = {};
-  if (process.env.GARMIN_EMAIL && process.env.GARMIN_PASSWORD) {
+  const hasEnv = !!(process.env.GARMIN_EMAIL && process.env.GARMIN_PASSWORD);
+  if (hasEnv) {
     try {
       const gc = await getGC();
       const today = new Date();
@@ -71,7 +72,7 @@ module.exports = async function handler(req, res) {
   }
 
   const activities = await activitiesP;
-  const data = { wellness, activities: Array.isArray(activities) ? activities : [] };
+  const data = { wellness, hasEnv, activities: Array.isArray(activities) ? activities : [] };
   _cache = { data, ts: Date.now() };
   res.json({ ...data, cached: false });
 };
