@@ -1,7 +1,24 @@
+const { GarminConnect } = require('garmin-connect');
+
 const MCP = 'https://garmin.amalgama.co/api/v1/mcp/7e260090-9ba6-4724-8027-f39f31549796';
 
 let _cache = { data: null, ts: 0 };
 const CACHE_MS = 10 * 60 * 1000;
+
+let _gc = null;
+let _gcTs = 0;
+
+async function getGC() {
+  if (!_gc || Date.now() - _gcTs > 50 * 60 * 1000) {
+    _gc = new GarminConnect({
+      username: process.env.GARMIN_EMAIL,
+      password: process.env.GARMIN_PASSWORD,
+    });
+    await _gc.login();
+    _gcTs = Date.now();
+  }
+  return _gc;
+}
 
 async function mcpTool(name, args) {
   const r = await fetch(MCP, {
@@ -14,7 +31,7 @@ async function mcpTool(name, args) {
   return text ? JSON.parse(text) : null;
 }
 
-function settled(r) { return r.status === 'fulfilled' ? r.value : null; }
+function val(r) { return r.status === 'fulfilled' ? r.value : null; }
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -25,34 +42,38 @@ module.exports = async function handler(req, res) {
     return res.json({ ..._cache.data, cached: true });
   }
 
-  const [actsR, bbR, sleepR, hrvR, stressR, snapR] = await Promise.allSettled([
-    mcpTool('list_activities', { limit: 5 }),
-    mcpTool('get_body_battery', {}),
-    mcpTool('get_sleep_summary', {}),
-    mcpTool('get_hrv_status', {}),
-    mcpTool('get_stress', {}),
-    mcpTool('get_wellness_snapshot', {}),
-  ]);
+  const activitiesP = mcpTool('list_activities', { limit: 5 }).catch(() => []);
 
-  const bb   = settled(bbR);
-  const sl   = settled(sleepR);
-  const hv   = settled(hrvR);
-  const st   = settled(stressR);
-  const snap = settled(snapR);
-  const acts = settled(actsR);
+  let wellness = {};
+  const hasEnv = !!(process.env.GARMIN_EMAIL && process.env.GARMIN_PASSWORD);
+  if (hasEnv) {
+    try {
+      const gc = await getGC();
+      const today = new Date();
+      const [summaryR, hrvR, stressR, sleepR] = await Promise.allSettled([
+        gc.getUserSummary(today),
+        gc.getHRV(today),
+        gc.getStress(today),
+        gc.getSleep(today),
+      ]);
+      const s  = val(summaryR) || {};
+      const h  = val(hrvR)     || {};
+      const st = val(stressR)  || {};
+      const sl = val(sleepR)   || {};
 
-  const sleepSec = sl?.sleepTimeSeconds ?? sl?.totalSleepSeconds ?? sl?.dailySleepDTO?.sleepTimeSeconds ?? null;
+      const sleepSec = sl?.dailySleepDTO?.sleepTimeSeconds ?? sl?.sleepTimeSeconds ?? null;
+      wellness = {
+        resting_hr: s?.restingHeartRate ?? null,
+        hrv:        h?.hrvSummary?.lastNight ?? h?.lastNight ?? h?.weeklyAvg ?? null,
+        stress:     st?.overallStressLevel ?? st?.avgStressLevel ?? null,
+        sleep:      sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
+        _raw: { s, h, st, sl },
+      };
+    } catch (e) { wellness = { _error: e.message }; }
+  }
 
-  const wellness = {
-    body_battery: bb?.currentBodyBattery ?? bb?.bodyBattery ?? snap?.bodyBattery ?? null,
-    resting_hr:   snap?.restingHeartRate ?? snap?.resting_heart_rate ?? null,
-    hrv:          hv?.lastNight ?? hv?.hrv ?? hv?.weeklyAvg ?? snap?.hrv ?? null,
-    stress:       st?.overallStressLevel ?? st?.avgStressLevel ?? snap?.stress ?? null,
-    sleep:        sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
-    _raw: { bb, sl, hv, st, snap },
-  };
-
-  const data = { wellness, activities: Array.isArray(acts) ? acts : [] };
+  const activities = await activitiesP;
+  const data = { wellness, hasEnv, activities: Array.isArray(activities) ? activities : [] };
   _cache = { data, ts: Date.now() };
   res.json({ ...data, cached: false });
 };
