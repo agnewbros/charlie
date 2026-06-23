@@ -55,27 +55,39 @@ module.exports = async function handler(req, res) {
       const profile = await gc.getUserProfile().catch(() => ({}));
       const dn = profile?.displayName || '';
 
+      const weekAgo = new Date(today - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
       const [summaryR, sleepR, hrvR] = await Promise.allSettled([
         gc.get(`${GC_API}/usersummary-service/usersummary/daily/${dn}?calendarDate=${dateStr}`),
         gc.getSleepData(today),
-        gc.get(`${GC_API}/hrv-service/hrv/${dn}?startDate=${dateStr}&endDate=${dateStr}`),
+        gc.get(`${GC_API}/hrv-service/hrv/${dn}?startDate=${weekAgo}&endDate=${dateStr}`),
       ]);
 
       const su = val(summaryR) || {};
       const sl = val(sleepR)   || {};
-      const hv = val(hrvR)     || {};
+      const hv = val(hrvR);
 
       const sleepSec = sl?.dailySleepDTO?.sleepTimeSeconds ?? sl?.sleepTimeSeconds ?? null;
 
-      // HRV: response may be object with .hrv array, or direct summary
-      const hvSummary = Array.isArray(hv?.hrv) ? hv.hrv[0]?.hrvSummary : hv?.hrvSummary;
+      // HRV: find most recent lastNight value from array or object
+      let hrv = null;
+      if (Array.isArray(hv?.hrv) && hv.hrv.length) {
+        for (let i = hv.hrv.length - 1; i >= 0; i--) {
+          const s = hv.hrv[i]?.hrvSummary;
+          if (s?.lastNight != null) { hrv = s.lastNight; break; }
+          if (s?.weeklyAvg != null) { hrv = s.weeklyAvg; break; }
+        }
+      } else if (hv?.hrvSummary) {
+        hrv = hv.hrvSummary?.lastNight ?? hv.hrvSummary?.weeklyAvg ?? null;
+      }
 
       wellness = {
         body_battery: su?.bodyBatteryMostRecentValue ?? null,
         resting_hr:   su?.restingHeartRate ?? null,
-        hrv:          hvSummary?.lastNight ?? hvSummary?.weeklyAvg ?? null,
+        hrv,
         stress:       su?.averageStressLevel ?? null,
         sleep:        sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
+        _hv_debug:    hv,
       };
     } catch (e) { wellness = { _error: e.message }; }
   }
