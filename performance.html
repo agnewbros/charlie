@@ -422,19 +422,21 @@ async function saveGarminToday(w){
 // ─────────────────────────────────────────────────────────────────
 // STRENGTH
 // ─────────────────────────────────────────────────────────────────
-const TARGET_EX=[
-  {key:'squat',   label:'Squat',            re:/squat/i},
-  {key:'rdl',     label:'Romanian Deadlift', re:/romanian|rdl/i},
-  {key:'bench',   label:'Bench Press',       re:/bench/i},
-];
+const EX_REG_KEY='po_ex_registry';
 let stCharts={};
-let stSelEx=TARGET_EX[0];
 
-function getExLogs(state,re){
-  const exs=(state.exercises||[]).filter(e=>re.test(e.name));
-  const all=[];
-  exs.forEach(ex=>{ (state.logs&&state.logs[ex.id]||[]).forEach(l=>{ if(l.weight>0) all.push({date:l.date.split('T')[0],weight:l.weight,reps:l.reps}); }); });
-  return all.sort((a,b)=>a.date.localeCompare(b.date));
+// Persistent name registry — survives program changes
+function loadRegistry(){
+  try{ return JSON.parse(localStorage.getItem(EX_REG_KEY))||{}; }catch(e){ return {}; }
+}
+function updateRegistry(exercises){
+  const reg=loadRegistry(); let changed=false;
+  (exercises||[]).forEach(function(e){ if(e.id&&e.name&&reg[e.id]!==e.name){ reg[e.id]=e.name; changed=true; } });
+  if(changed) localStorage.setItem(EX_REG_KEY,JSON.stringify(reg));
+  return reg;
+}
+function getExLogsById(state,exId){
+  return ((state.logs||{})[exId]||[]).filter(l=>l.weight>0).map(l=>({date:l.date.split('T')[0],weight:l.weight,reps:l.reps})).sort((a,b)=>a.date.localeCompare(b.date));
 }
 
 function makeChart(id,label,labels,data,color){
@@ -455,12 +457,10 @@ function makeChart(id,label,labels,data,color){
   });
 }
 
-function renderStrength(ex){
-  const state=loadWS();
-  const logs=getExLogs(state,ex.re);
+function renderStrength(exId,exName,state){
+  const logs=getExLogsById(state,exId);
   const u=state.units||'kg';
 
-  // stats
   const best1RM=logs.length?Math.max(...logs.map(l=>e1RM(l.weight,l.reps))):0;
   const wkCut=new Date(); wkCut.setDate(wkCut.getDate()-7);
   const wkLogs=logs.filter(l=>new Date(l.date)>=wkCut);
@@ -470,17 +470,14 @@ function renderStrength(ex){
   document.getElementById('stVol').textContent=wkVol?Math.round(wkVol)+u:'—';
   document.getElementById('stPR').textContent=repPR||'—';
 
-  // 1RM chart — last 30 sets
   const last30=logs.slice(-30);
   makeChart('chart1RM','1RM',last30.map(l=>dlbl(l.date)),last30.map(l=>Math.round(e1RM(l.weight,l.reps))),'#6ee7b7');
 
-  // Volume chart — weekly
   const byWk={};
   logs.forEach(l=>{ const w=weekKey(l.date); byWk[w]=(byWk[w]||0)+l.weight*l.reps; });
   const volData=Object.entries(byWk).sort((a,b)=>a[0].localeCompare(b[0])).slice(-14);
   makeChart('chartVol','Volume',volData.map(v=>dlbl(v[0])),volData.map(v=>Math.round(v[1])),'#60a5fa');
 
-  // insight
   const insEl=document.getElementById('stInsight');
   if(logs.length>=6){
     const half=Math.floor(logs.length/2);
@@ -489,9 +486,9 @@ function renderStrength(ex){
     const l1=avg(last.map(l=>e1RM(l.weight,l.reps)));
     const delta=l1-f1; const pct=Math.round(delta/f1*100);
     const weeks=Math.round((new Date(logs[logs.length-1].date)-new Date(logs[0].date))/(7*86400000));
-    if(Math.abs(delta)<0.5){ insEl.textContent='Your '+ex.label+' 1RM has been consistent over '+weeks+' weeks. Consider adding volume or a deload to break through.'; insEl.className='pi-insight warn'; }
-    else if(delta>0){ insEl.textContent='Your '+ex.label+' estimated 1RM improved '+pct+'% over '+weeks+' weeks — solid progression.'; insEl.className='pi-insight'; }
-    else{ insEl.textContent='Your '+ex.label+' 1RM declined '+Math.abs(pct)+'% over '+weeks+' weeks. Check recovery, sleep, and session frequency.'; insEl.className='pi-insight bad'; }
+    if(Math.abs(delta)<0.5){ insEl.textContent='Your '+exName+' 1RM has been consistent over '+weeks+' weeks. Consider adding volume or a deload to break through.'; insEl.className='pi-insight warn'; }
+    else if(delta>0){ insEl.textContent='Your '+exName+' estimated 1RM improved '+pct+'% over '+weeks+' weeks — solid progression.'; insEl.className='pi-insight'; }
+    else{ insEl.textContent='Your '+exName+' 1RM declined '+Math.abs(pct)+'% over '+weeks+' weeks. Check recovery, sleep, and session frequency.'; insEl.className='pi-insight bad'; }
     insEl.style.display='block';
   } else {
     insEl.style.display='none';
@@ -499,20 +496,43 @@ function renderStrength(ex){
 }
 
 function initStrength(){
+  const state=loadWS();
+  const reg=updateRegistry(state.exercises||[]);
+  const logsMap=state.logs||{};
+
+  // all IDs with at least one logged set
+  const loggedIds=Object.keys(logsMap).filter(id=>(logsMap[id]||[]).some(l=>l.weight>0));
+
+  // current program order first, then historical exercises no longer in program
+  const currentIds=(state.exercises||[]).map(e=>e.id);
+  const currentSet=new Set(currentIds);
+  const sorted=[
+    ...currentIds.filter(id=>loggedIds.includes(id)),
+    ...loggedIds.filter(id=>!currentSet.has(id))
+  ];
+
   const pills=document.getElementById('exPills');
   pills.innerHTML='';
-  TARGET_EX.forEach(function(ex,i){
+
+  if(!sorted.length){
+    pills.innerHTML='<div style="color:var(--text-4);font-size:13px">No exercises logged yet — use the Gym tab to record workouts.</div>';
+    return;
+  }
+
+  sorted.forEach(function(id,i){
+    const name=reg[id]||'Exercise';
     const btn=document.createElement('button');
     btn.className='pi-ex-pill'+(i===0?' active':'');
-    btn.textContent=ex.label;
+    btn.textContent=name;
     btn.addEventListener('click',function(){
       document.querySelectorAll('.pi-ex-pill').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      stSelEx=ex; renderStrength(ex);
+      renderStrength(id,name,state);
     });
     pills.appendChild(btn);
   });
-  renderStrength(stSelEx);
+
+  renderStrength(sorted[0],reg[sorted[0]]||'Exercise',state);
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -890,30 +910,38 @@ async function initCoach(){
         return 'Not enough Garmin data to assess. Enable Garmin sync and check back after a few days of data.';
       }
       case 'squat':{
-        const logs=getExLogs(state,/squat/i);
-        if(logs.length<4) return 'Log at least 4 squat sessions to enable goal projection.';
+        const reg=loadRegistry();
+        const sqIds=Object.keys(state.logs||{}).filter(id=>reg[id]&&/squat/i.test(reg[id])&&(state.logs[id]||[]).some(l=>l.weight>0));
+        if(!sqIds.length) return 'No squat exercises found in your logs. Log squat sessions in the Gym tab first.';
+        const sqId=sqIds.reduce((a,b)=>(state.logs[a]||[]).length>=(state.logs[b]||[]).length?a:b);
+        const sqName=reg[sqId];
+        const logs=getExLogsById(state,sqId);
+        if(logs.length<4) return 'Log at least 4 '+sqName+' sessions to enable goal projection.';
         const last=logs.slice(-4); const prev=logs.slice(-8,-4);
         const r1RM=avg(last.map(l=>e1RM(l.weight,l.reps)));
         const p1RM=prev.length?avg(prev.map(l=>e1RM(l.weight,l.reps))):null;
-        if(!p1RM) return 'Current squat estimated 1RM: '+Math.round(r1RM)+(state.units||'kg')+'. Log more sessions to project a timeline.';
+        if(!p1RM) return 'Current '+sqName+' estimated 1RM: '+Math.round(r1RM)+(state.units||'kg')+'. Log more sessions to project a timeline.';
         const gain=(r1RM-p1RM)/4;
-        if(gain<=0) return 'Squat 1RM is at ~'+Math.round(r1RM)+(state.units||'kg')+' and hasn\'t increased recently.\n\nFocus on: consistent sleep, adequate protein, and progressive overload.';
+        if(gain<=0) return sqName+' 1RM is at ~'+Math.round(r1RM)+(state.units||'kg')+' and hasn\'t increased recently.\n\nFocus on: consistent sleep, adequate protein, and progressive overload.';
         const target=r1RM*1.10;
         const weeks=Math.ceil((target-r1RM)/gain);
-        return 'Current squat: ~'+Math.round(r1RM)+(state.units||'kg')+'\nRate of gain: ~'+gain.toFixed(1)+(state.units||'kg')+'/week\n\nAt this rate, you\'d reach '+Math.round(target)+(state.units||'kg')+' (10% above current) in approximately '+weeks+' weeks.\n\nBiggest lever: consistent sleep quality and session frequency.';
+        return 'Current '+sqName+': ~'+Math.round(r1RM)+(state.units||'kg')+'\nRate of gain: ~'+gain.toFixed(1)+(state.units||'kg')+'/week\n\nAt this rate, you\'d reach '+Math.round(target)+(state.units||'kg')+' (10% above current) in approximately '+weeks+' weeks.\n\nBiggest lever: consistent sleep quality and session frequency.';
       }
       case 'progress':{
         const u=state.units||'kg';
+        const reg=loadRegistry();
         const lines=['Current performance summary:\n'];
-        TARGET_EX.forEach(ex=>{
-          const logs=getExLogs(state,ex.re);
-          if(!logs.length){ lines.push('• '+ex.label+': no sessions logged'); return; }
-          const best=Math.max(...logs.map(l=>e1RM(l.weight,l.reps)));
-          const rec3=logs.slice(-3);
+        const loggedIds=Object.keys(state.logs||{}).filter(id=>reg[id]&&(state.logs[id]||[]).some(l=>l.weight>0));
+        loggedIds.slice(0,8).forEach(function(id){
+          const exLogs=getExLogsById(state,id);
+          if(!exLogs.length){ lines.push('• '+reg[id]+': no sessions logged'); return; }
+          const best=Math.max(...exLogs.map(l=>e1RM(l.weight,l.reps)));
+          const rec3=exLogs.slice(-3);
           const rec=Math.max(...rec3.map(l=>e1RM(l.weight,l.reps)));
           const trend=rec>=best*.98?'↑ at peak':rec<best*.92?'↓ below peak':'→ holding';
-          lines.push('• '+ex.label+': ~'+Math.round(rec)+u+' 1RM ('+trend+')');
+          lines.push('• '+reg[id]+': ~'+Math.round(rec)+u+' 1RM ('+trend+')');
         });
+        if(!loggedIds.length) lines.push('No exercises logged yet — head to the Gym tab to start tracking.');
         if(g.sleep!=null) lines.push('\nSleep: '+g.sleep.toFixed(1)+'h | Battery: '+Math.round(g.body_battery||0));
         if(score!=null) lines.push('Readiness: '+score+'/100');
         if(fatigueSignals) lines.push('\n⚠ Fatigue signals detected — recovery should be a priority.');
