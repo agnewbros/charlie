@@ -54,47 +54,49 @@ module.exports = async function handler(req, res) {
       const dateStr = today.toISOString().split('T')[0];
 
       const profile = await gc.getUserProfile().catch(() => ({}));
-      const dn = profile?.displayName || profile?.userName || profile?.userProfileId || '';
+      const dn = profile?.displayName || '';
 
-      const [hrR, sleepR, hrvR, stressR, bbR] = await Promise.allSettled([
+      const [hrR, sleepR, summaryR, hrvR, stressR, bbR] = await Promise.allSettled([
         gc.getHeartRate(today),
         gc.getSleepData(today),
-        gc.get(`${GC_API}/hrv-service/hrv/${dn}?startDate=${dateStr}&endDate=${dateStr}`),
-        gc.get(`${GC_API}/stress-service/stress/summaryDetails/${dn}?startDate=${dateStr}&endDate=${dateStr}`),
-        gc.get(`${GC_API}/wellness-service/wellness/dailySummaryChart/${dn}?date=${dateStr}`),
+        gc.get(`${GC_API}/usersummary-service/usersummary/daily/${dn}?calendarDate=${dateStr}`),
+        gc.get(`${GC_API}/hrv-service/hrv?calendarDate=${dateStr}`),
+        gc.get(`${GC_API}/wellness-service/wellness/dailyStress?date=${dateStr}`),
+        gc.get(`${GC_API}/wellness-service/wellness/bodyBattery?startDate=${dateStr}&endDate=${dateStr}`),
       ]);
 
-      const hr  = val(hrR)     || {};
-      const sl  = val(sleepR)  || {};
-      const hv  = val(hrvR)    || {};
-      const st  = val(stressR) || {};
+      const hr  = val(hrR)      || {};
+      const sl  = val(sleepR)   || {};
+      const su  = val(summaryR) || {};
+      const hv  = val(hrvR)     || {};
+      const st  = val(stressR)  || {};
       const bb  = val(bbR);
 
       const sleepSec = sl?.dailySleepDTO?.sleepTimeSeconds ?? sl?.sleepTimeSeconds ?? null;
 
-      // Body battery: daily chart returns array; grab latest non-null value
+      // Body battery: might be array or object
       let bodyBattery = null;
-      if (Array.isArray(bb)) {
+      if (Array.isArray(bb) && bb.length) {
         for (let i = bb.length - 1; i >= 0; i--) {
-          if (bb[i]?.bodyBattery != null) { bodyBattery = bb[i].bodyBattery; break; }
-          if (bb[i]?.value != null)        { bodyBattery = bb[i].value; break; }
+          const v = bb[i]?.bodyBatteryLevel ?? bb[i]?.bodyBattery ?? bb[i]?.value ?? null;
+          if (v != null) { bodyBattery = v; break; }
         }
+      } else if (bb && typeof bb === 'object') {
+        bodyBattery = bb?.bodyBatteryLevel ?? bb?.bodyBattery ?? null;
       }
 
       wellness = {
         body_battery: bodyBattery,
         resting_hr:   hr?.restingHeartRate ?? null,
         hrv:          hv?.hrvSummary?.lastNight ?? hv?.lastNight ?? hv?.weeklyAvg ?? null,
-        stress:       st?.overallStressLevel ?? st?.avgStressLevel ?? null,
+        stress:       su?.averageStressLevel ?? st?.overallStressLevel ?? st?.avgStressLevel ?? null,
         sleep:        sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
-        _dn:          dn,
         _raw: {
-          hv_keys:  hv  ? Object.keys(hv)  : null,
-          st_keys:  st  ? Object.keys(st)  : null,
-          bb_sample: Array.isArray(bb) ? bb.slice(-3) : bb,
-          profile_keys: profile ? Object.keys(profile) : null,
-          profile_dn:   profile?.displayName,
-          profile_un:   profile?.userName,
+          su_keys: su  ? Object.keys(su)  : null,
+          hv_keys: hv  ? Object.keys(hv)  : null,
+          st_keys: st  ? Object.keys(st)  : null,
+          bb_type: Array.isArray(bb) ? `array[${bb.length}]` : (bb ? 'object' : bb),
+          bb_sample: Array.isArray(bb) ? bb.slice(-2) : bb,
         },
       };
     } catch (e) { wellness = { _error: e.message }; }
