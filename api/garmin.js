@@ -1,6 +1,7 @@
 const { GarminConnect } = require('garmin-connect');
 
 const MCP = 'https://garmin.amalgama.co/api/v1/mcp/7e260090-9ba6-4724-8027-f39f31549796';
+const GC_API = 'https://connectapi.garmin.com';
 
 let _cache = { data: null, ts: 0 };
 const CACHE_MS = 10 * 60 * 1000;
@@ -50,24 +51,32 @@ module.exports = async function handler(req, res) {
     try {
       const gc = await getGC();
       const today = new Date();
-      const [summaryR, hrvR, stressR, sleepR] = await Promise.allSettled([
-        gc.getUserSummary(today),
-        gc.getHRV(today),
-        gc.getStress(today),
-        gc.getSleep(today),
+      const dateStr = today.toISOString().split('T')[0];
+
+      // Get display name for endpoints that require it
+      const profile = await gc.getUserProfile().catch(() => ({}));
+      const dn = profile?.displayName || profile?.userName || '';
+
+      const [hrR, sleepR, hrvR, stressR] = await Promise.allSettled([
+        gc.getHeartRate(today),
+        gc.getSleepData(today),
+        gc.get(`${GC_API}/hrv-service/hrv/${dn}?startDate=${dateStr}&endDate=${dateStr}`),
+        gc.get(`${GC_API}/wellness-service/wellness/dailyStress/${dn}?date=${dateStr}`),
       ]);
-      const s  = val(summaryR) || {};
-      const h  = val(hrvR)     || {};
-      const st = val(stressR)  || {};
-      const sl = val(sleepR)   || {};
+
+      const hr  = val(hrR)    || {};
+      const sl  = val(sleepR) || {};
+      const hv  = val(hrvR)   || {};
+      const st  = val(stressR)|| {};
 
       const sleepSec = sl?.dailySleepDTO?.sleepTimeSeconds ?? sl?.sleepTimeSeconds ?? null;
+
       wellness = {
-        resting_hr: s?.restingHeartRate ?? null,
-        hrv:        h?.hrvSummary?.lastNight ?? h?.lastNight ?? h?.weeklyAvg ?? null,
+        resting_hr: hr?.restingHeartRate ?? null,
+        hrv:        hv?.hrvSummary?.lastNight ?? hv?.lastNight ?? hv?.weeklyAvg ?? null,
         stress:     st?.overallStressLevel ?? st?.avgStressLevel ?? null,
         sleep:      sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
-        _raw: { s, h, st, sl },
+        _raw: { hr, sl, hv, st, profile },
       };
     } catch (e) { wellness = { _error: e.message }; }
   }
