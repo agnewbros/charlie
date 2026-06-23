@@ -67,9 +67,10 @@ module.exports = async function handler(req, res) {
       const sleepSec = sl?.dailySleepDTO?.sleepTimeSeconds ?? sl?.sleepTimeSeconds ?? null;
 
       // Try proxy URL with bearer token + native-client headers
-      const token = gc.exportToken()?.access_token;
+      const tokenObj = gc.exportToken();
+      const token = tokenObj?.access_token || tokenObj?.accessToken;
       let hrv = null;
-      let hvDebug = {};
+      let hvDebug = { tokenType: typeof tokenObj, tokenKeys: tokenObj ? Object.keys(tokenObj) : null };
       if (token) {
         try {
           const r = await fetch(
