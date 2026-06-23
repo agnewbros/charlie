@@ -1468,8 +1468,8 @@ img, video, canvas, svg { max-width: 100%; }
         <span class="garmin-stat-lbl">Resting HR</span>
       </div>
       <div class="garmin-stat">
-        <span class="garmin-stat-val" id="garminHRV">—</span>
-        <span class="garmin-stat-lbl">HRV</span>
+        <span class="garmin-stat-val" id="garminBB">—</span>
+        <span class="garmin-stat-lbl">Body Battery</span>
       </div>
       <div class="garmin-stat">
         <span class="garmin-stat-val" id="garminStress">—</span>
@@ -3971,10 +3971,10 @@ img, video, canvas, svg { max-width: 100%; }
       const d = await res.json();
       if (d.error) return;
       const w = d.wellness || {};
-      document.getElementById('garminHR').textContent     = w.resting_hr != null ? Math.round(w.resting_hr) + ' bpm' : '—';
-      document.getElementById('garminHRV').textContent    = w.hrv != null ? Math.round(w.hrv) + ' ms' : '—';
-      document.getElementById('garminStress').textContent = w.stress != null ? Math.round(w.stress) : '—';
-      document.getElementById('garminSleep').textContent  = w.sleep != null ? w.sleep.toFixed(1) + 'h' : '—';
+      document.getElementById('garminHR').textContent     = w.resting_hr   != null ? Math.round(w.resting_hr) + ' bpm' : '—';
+      document.getElementById('garminBB').textContent     = w.body_battery  != null ? Math.round(w.body_battery) : '—';
+      document.getElementById('garminStress').textContent = w.stress        != null ? Math.round(w.stress) : '—';
+      document.getElementById('garminSleep').textContent  = w.sleep         != null ? w.sleep.toFixed(1) + 'h' : '—';
       renderActs(d.activities);
     } catch (_) {}
   }

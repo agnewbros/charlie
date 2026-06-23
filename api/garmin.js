@@ -46,8 +46,7 @@ module.exports = async function handler(req, res) {
   const activitiesP = mcpTool('list_activities', { limit: 5 }).catch(() => []);
 
   let wellness = {};
-  const hasEnv = !!(process.env.GARMIN_EMAIL && process.env.GARMIN_PASSWORD);
-  if (hasEnv) {
+  if (process.env.GARMIN_EMAIL && process.env.GARMIN_PASSWORD) {
     try {
       const gc = await getGC();
       const today = new Date();
@@ -56,54 +55,27 @@ module.exports = async function handler(req, res) {
       const profile = await gc.getUserProfile().catch(() => ({}));
       const dn = profile?.displayName || '';
 
-      const [hrR, sleepR, summaryR, hrvR, stressR, bbR] = await Promise.allSettled([
-        gc.getHeartRate(today),
-        gc.getSleepData(today),
+      const [summaryR, sleepR] = await Promise.allSettled([
         gc.get(`${GC_API}/usersummary-service/usersummary/daily/${dn}?calendarDate=${dateStr}`),
-        gc.get(`${GC_API}/hrv-service/hrv?calendarDate=${dateStr}`),
-        gc.get(`${GC_API}/wellness-service/wellness/dailyStress?date=${dateStr}`),
-        gc.get(`${GC_API}/wellness-service/wellness/bodyBattery?startDate=${dateStr}&endDate=${dateStr}`),
+        gc.getSleepData(today),
       ]);
 
-      const hr  = val(hrR)      || {};
-      const sl  = val(sleepR)   || {};
-      const su  = val(summaryR) || {};
-      const hv  = val(hrvR)     || {};
-      const st  = val(stressR)  || {};
-      const bb  = val(bbR);
+      const su = val(summaryR) || {};
+      const sl = val(sleepR)   || {};
 
       const sleepSec = sl?.dailySleepDTO?.sleepTimeSeconds ?? sl?.sleepTimeSeconds ?? null;
 
-      // Body battery: might be array or object
-      let bodyBattery = null;
-      if (Array.isArray(bb) && bb.length) {
-        for (let i = bb.length - 1; i >= 0; i--) {
-          const v = bb[i]?.bodyBatteryLevel ?? bb[i]?.bodyBattery ?? bb[i]?.value ?? null;
-          if (v != null) { bodyBattery = v; break; }
-        }
-      } else if (bb && typeof bb === 'object') {
-        bodyBattery = bb?.bodyBatteryLevel ?? bb?.bodyBattery ?? null;
-      }
-
       wellness = {
-        body_battery: bodyBattery,
-        resting_hr:   hr?.restingHeartRate ?? null,
-        hrv:          hv?.hrvSummary?.lastNight ?? hv?.lastNight ?? hv?.weeklyAvg ?? null,
-        stress:       su?.averageStressLevel ?? st?.overallStressLevel ?? st?.avgStressLevel ?? null,
+        body_battery: su?.bodyBatteryMostRecentValue ?? null,
+        resting_hr:   su?.restingHeartRate ?? null,
+        stress:       su?.averageStressLevel ?? null,
         sleep:        sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
-        _raw: {
-          su_keys: su  ? Object.keys(su)  : null,
-          hv_keys: hv  ? Object.keys(hv)  : null,
-          st_keys: st  ? Object.keys(st)  : null,
-          bb_type: Array.isArray(bb) ? `array[${bb.length}]` : (bb ? 'object' : bb),
-          bb_sample: Array.isArray(bb) ? bb.slice(-2) : bb,
-        },
       };
     } catch (e) { wellness = { _error: e.message }; }
   }
 
   const activities = await activitiesP;
-  const data = { wellness, hasEnv, activities: Array.isArray(activities) ? activities : [] };
+  const data = { wellness, activities: Array.isArray(activities) ? activities : [] };
   _cache = { data, ts: Date.now() };
   res.json({ ...data, cached: false });
 };
