@@ -172,6 +172,7 @@ input[type=date].pi-input{color-scheme:dark}
   <div class="pi-tabs" id="piTabs">
     <button class="pi-tab active" data-tab="strength">STRENGTH</button>
     <button class="pi-tab" data-tab="health">HEALTH</button>
+    <button class="pi-tab" data-tab="activities">ACTIVITIES</button>
     <button class="pi-tab" data-tab="readiness">READINESS</button>
     <button class="pi-tab" data-tab="recovery">RECOVERY</button>
     <button class="pi-tab" data-tab="insights">INSIGHTS</button>
@@ -233,6 +234,34 @@ input[type=date].pi-input{color-scheme:dark}
     <div id="healthInsight" class="pi-insight" style="display:none"></div>
     <div class="pi-div">Personal Baselines (30-day)</div>
     <div class="pi-card"><div id="blRows"><div style="color:var(--text-4);font-size:13px;text-align:center;padding:8px">Need 7+ days of data</div></div></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       ACTIVITIES
+  ════════════════════════════════════════════ -->
+  <div id="tab-activities" style="display:none">
+    <div class="pi-card">
+      <div class="pi-card-title">Activity Type</div>
+      <div class="pi-ex-pills" id="actPills"></div>
+    </div>
+    <div class="pi-card">
+      <div class="pi-card-title">Summary</div>
+      <div class="pi-stats pi-stats-4">
+        <div class="pi-stat"><span class="pi-stat-val" id="actSessions">—</span><span class="pi-stat-lbl">Sessions</span></div>
+        <div class="pi-stat"><span class="pi-stat-val" id="actDistVal">—</span><span class="pi-stat-lbl" id="actDistLbl">Avg Dist</span></div>
+        <div class="pi-stat"><span class="pi-stat-val" id="actHR">—</span><span class="pi-stat-lbl">Avg HR</span></div>
+        <div class="pi-stat"><span class="pi-stat-val" id="actCal">—</span><span class="pi-stat-lbl">Avg Cal</span></div>
+      </div>
+    </div>
+    <div class="pi-card">
+      <div class="pi-card-title" id="actChartLbl">Distance Trend (km)</div>
+      <div class="pi-chart-wrap"><canvas id="chartActDist"></canvas></div>
+    </div>
+    <div class="pi-card">
+      <div class="pi-card-title">Avg Heart Rate Trend</div>
+      <div class="pi-chart-wrap"><canvas id="chartActHR"></canvas></div>
+    </div>
+    <div id="actInsight" class="pi-insight" style="display:none"></div>
   </div>
 
   <!-- ═══════════════════════════════════════════
@@ -391,7 +420,7 @@ function nil(v,u){ return v!=null?v+u:'—'; }
 const METHOD_LBL = {sauna:'Sauna',cold_tub:'Cold Tub',hot_tub:'Hot Tub',red_light:'Red Light',foam_rolling:'Foam Rolling',ems:'EMS'};
 
 // ─── Tabs ────────────────────────────────────────────────────────
-const TABS=['strength','health','readiness','recovery','insights','coach'];
+const TABS=['strength','health','activities','readiness','recovery','insights','coach'];
 const initialized={};
 document.querySelectorAll('.pi-tab').forEach(function(btn){
   btn.addEventListener('click',function(){
@@ -616,6 +645,176 @@ async function initHealth(){
   makeHealthChart('chartBB',   'Body Battery', garminHistory,'body_battery','#6ee7b7');
   renderBaselines(garminHistory,w);
   renderHealthInsight(garminHistory);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ACTIVITIES
+// ─────────────────────────────────────────────────────────────────
+let garminActivities=[];
+let actCharts={};
+
+const ACT_TYPE_LBL={
+  running:'Running',cycling:'Cycling',indoor_cycling:'Indoor Cycling',
+  strength_training:'Strength',swimming:'Swimming',open_water_swimming:'Open Water',
+  hiking:'Hiking',walking:'Walking',yoga:'Yoga',cardio:'Cardio',
+  elliptical:'Elliptical',rowing:'Rowing',indoor_rowing:'Indoor Rowing',
+  trail_running:'Trail Run',mountain_biking:'MTB',gravel_cycling:'Gravel',
+  treadmill_running:'Treadmill',virtual_ride:'Virtual Ride',other:'Other'
+};
+const GPS_TYPES=new Set(['running','cycling','hiking','swimming','walking','open_water_swimming','trail_running','mountain_biking','gravel_cycling','treadmill_running','indoor_cycling','virtual_ride']);
+
+function actLabel(k){ return ACT_TYPE_LBL[k]||(k||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+function isGps(k){ return GPS_TYPES.has(k)||/run|cycl|swim|hike|walk|bike/.test(k||''); }
+function actDateStr(a){
+  const raw=a.startTimeLocal||a.startTimeGMT||'';
+  if(raw) return raw.split(' ')[0]||raw.split('T')[0];
+  if(a.beginTimestamp) return new Date(a.beginTimestamp).toISOString().split('T')[0];
+  return null;
+}
+
+async function loadActivities(){
+  if(garminActivities.length) return garminActivities;
+  try{
+    const r=await fetch('/api/garmin'); const d=await r.json();
+    const fresh=Array.isArray(d.activities)?d.activities:[];
+    if(fresh.length){
+      const rows=fresh.map(function(a){
+        const date=actDateStr(a);
+        if(!a.activityId||!date) return null;
+        return {
+          activity_id:a.activityId,
+          activity_type:a.activityType?.typeKey||'other',
+          name:a.activityName||'',
+          start_date:date,
+          distance_m:a.distance||null,
+          duration_s:a.duration||a.movingDuration||null,
+          avg_hr:a.averageHR||null,
+          max_hr:a.maxHR||null,
+          calories:a.calories||null,
+          avg_speed:a.averageSpeed||null,
+        };
+      }).filter(Boolean);
+      if(rows.length) await db().from('garmin_activities').upsert(rows,{onConflict:'activity_id'}).catch(()=>{});
+    }
+  }catch(e){}
+  try{
+    const {data}=await db().from('garmin_activities').select('*').order('start_date',{ascending:true}).limit(300);
+    garminActivities=data||[];
+  }catch(e){ garminActivities=[]; }
+  return garminActivities;
+}
+
+function makeActChart(id,label,labels,data,color){
+  if(actCharts[id]){ actCharts[id].destroy(); }
+  const ctx=document.getElementById(id); if(!ctx||!data.filter(Boolean).length) return;
+  actCharts[id]=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'18',tension:.35,fill:true,pointRadius:2,pointHoverRadius:5,spanGaps:true}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'rgba(255,255,255,.3)',maxTicksLimit:6,font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{ticks:{color:'rgba(255,255,255,.3)',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}}
+      }
+    }
+  });
+}
+
+function renderActivities(typeKey){
+  const acts=garminActivities.filter(a=>a.activity_type===typeKey);
+  const gps=isGps(typeKey);
+  const withDist=acts.filter(a=>a.distance_m>100);
+  const withHR=acts.filter(a=>a.avg_hr);
+  const withCal=acts.filter(a=>a.calories);
+  const withDur=acts.filter(a=>a.duration_s);
+  const avgDist=withDist.length?avg(withDist.map(a=>a.distance_m/1000)):null;
+  const avgDur=withDur.length?Math.round(avg(withDur.map(a=>a.duration_s/60))):null;
+  const avgHR=withHR.length?Math.round(avg(withHR.map(a=>a.avg_hr))):null;
+  const avgCal=withCal.length?Math.round(avg(withCal.map(a=>a.calories))):null;
+
+  document.getElementById('actSessions').textContent=acts.length||'—';
+  document.getElementById('actHR').textContent=avgHR?avgHR+' bpm':'—';
+  document.getElementById('actCal').textContent=avgCal||'—';
+
+  if(gps&&avgDist!=null){
+    document.getElementById('actDistVal').textContent=avgDist.toFixed(1)+' km';
+    document.getElementById('actDistLbl').textContent='Avg Dist';
+    document.getElementById('actChartLbl').textContent='Distance Trend (km)';
+  } else if(avgDur!=null){
+    document.getElementById('actDistVal').textContent=avgDur+' min';
+    document.getElementById('actDistLbl').textContent='Avg Time';
+    document.getElementById('actChartLbl').textContent='Duration Trend (min)';
+  } else {
+    document.getElementById('actDistVal').textContent='—';
+    document.getElementById('actDistLbl').textContent='Avg Dist';
+  }
+
+  const recent=acts.slice(-30);
+  const dates=recent.map(a=>dlbl(a.start_date));
+
+  if(gps){
+    makeActChart('chartActDist','Distance km',dates,recent.map(a=>a.distance_m>0?+(a.distance_m/1000).toFixed(2):null),'#6ee7b7');
+  } else {
+    makeActChart('chartActDist','Duration min',dates,recent.map(a=>a.duration_s>0?Math.round(a.duration_s/60):null),'#a78bfa');
+  }
+  makeActChart('chartActHR','Avg HR',dates,recent.map(a=>a.avg_hr||null),'#ff8a8a');
+
+  // insight
+  const insEl=document.getElementById('actInsight');
+  if(acts.length>=6){
+    const half=Math.floor(acts.length/2);
+    const first=acts.slice(0,half); const last=acts.slice(half);
+    const weeks=Math.max(1,Math.round((new Date(acts[acts.length-1].start_date)-new Date(acts[0].start_date))/(7*86400000)));
+    let txt=''; let cls='';
+    if(gps&&withDist.length>=4){
+      const fd=avg(first.filter(a=>a.distance_m>100).map(a=>a.distance_m)||[0]);
+      const ld=avg(last.filter(a=>a.distance_m>100).map(a=>a.distance_m)||[0]);
+      if(fd>0){
+        const pct=Math.round((ld-fd)/fd*100);
+        if(Math.abs(pct)<5) txt='Your '+actLabel(typeKey)+' distance has been consistent over '+weeks+' weeks.';
+        else if(pct>0){ txt='Average '+actLabel(typeKey)+' distance is up '+pct+'% over '+weeks+' weeks — volume is building well.'; }
+        else { txt=actLabel(typeKey)+' distance is down '+Math.abs(pct)+'% over '+weeks+' weeks. Check if this is intentional tapering or fatigue.'; cls='warn'; }
+      }
+    } else if(withHR.length>=4){
+      const fh=avg(first.filter(a=>a.avg_hr).map(a=>a.avg_hr)||[0]);
+      const lh=avg(last.filter(a=>a.avg_hr).map(a=>a.avg_hr)||[0]);
+      if(fh>0){
+        const pct=Math.round((lh-fh)/fh*100);
+        if(pct<-5) txt='Average HR during '+actLabel(typeKey)+' has dropped '+Math.abs(pct)+'% over '+weeks+' weeks — aerobic fitness is improving.';
+        else if(pct>8){ txt='HR during '+actLabel(typeKey)+' is up '+pct+'% over '+weeks+' weeks — could indicate fatigue or increased intensity.'; cls='warn'; }
+        else txt=actLabel(typeKey)+' heart rate is stable over '+weeks+' weeks.';
+      }
+    }
+    if(txt){ insEl.textContent=txt; insEl.className='pi-insight'+(cls?' '+cls:''); insEl.style.display='block'; }
+    else insEl.style.display='none';
+  } else insEl.style.display='none';
+}
+
+async function initActivities(){
+  const pills=document.getElementById('actPills');
+  pills.innerHTML='<div style="color:var(--text-4);font-size:13px">Loading…</div>';
+  await loadActivities();
+  if(!garminActivities.length){
+    pills.innerHTML='<div style="color:var(--text-4);font-size:13px">No activities yet. Each visit will sync your recent Garmin activities.</div>';
+    return;
+  }
+  const counts={};
+  garminActivities.forEach(a=>{ counts[a.activity_type]=(counts[a.activity_type]||0)+1; });
+  const types=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([k])=>k);
+  pills.innerHTML='';
+  types.forEach(function(typeKey,i){
+    const btn=document.createElement('button');
+    btn.className='pi-ex-pill'+(i===0?' active':'');
+    btn.textContent=actLabel(typeKey)+' ('+counts[typeKey]+')';
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('#actPills .pi-ex-pill').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      renderActivities(typeKey);
+    });
+    pills.appendChild(btn);
+  });
+  renderActivities(types[0]);
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -960,12 +1159,13 @@ async function initCoach(){
 // INIT MAP & BOOT
 // ─────────────────────────────────────────────────────────────────
 const INITS={
-  strength: initStrength,
-  health:   initHealth,
-  readiness:initReadiness,
-  recovery: initRecovery,
-  insights: initInsights,
-  coach:    initCoach,
+  strength:   initStrength,
+  health:     initHealth,
+  activities: initActivities,
+  readiness:  initReadiness,
+  recovery:   initRecovery,
+  insights:   initInsights,
+  coach:      initCoach,
 };
 
 document.addEventListener('DOMContentLoaded',function(){

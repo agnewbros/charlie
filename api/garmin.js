@@ -41,7 +41,7 @@ module.exports = async function handler(req, res) {
     return res.json({ ..._cache.data, cached: true });
   }
 
-  const activitiesP = mcpTool('list_activities', { limit: 5 }).catch(() => []);
+  const activitiesP = mcpTool('list_activities', { limit: 30 }).catch(() => []);
 
   let wellness = {};
   if (process.env.GARMIN_EMAIL && process.env.GARMIN_PASSWORD) {
