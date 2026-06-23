@@ -4,27 +4,33 @@ const MCP = 'https://garmin.amalgama.co/api/v1/mcp/7e260090-9ba6-4724-8027-f39f3
 
 let _cache = { data: null, ts: 0 };
 const CACHE_MS = 10 * 60 * 1000;
-// debug: bump this to bust cache after deploys
 
 let _gc = null;
 let _gcTs = 0;
 
 async function getGC() {
   if (!_gc || Date.now() - _gcTs > 50 * 60 * 1000) {
-    _gc = new GarminConnect();
-    await _gc.login(process.env.GARMIN_EMAIL, process.env.GARMIN_PASSWORD);
+    _gc = new GarminConnect({
+      username: process.env.GARMIN_EMAIL,
+      password: process.env.GARMIN_PASSWORD,
+    });
+    await _gc.login();
     _gcTs = Date.now();
   }
   return _gc;
 }
 
-async function mcpTool(name, args) {
+async function mcpPost(method, params) {
   const r = await fetch(MCP, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args || {} } })
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
   });
-  const j = await r.json();
+  return r.json();
+}
+
+async function mcpTool(name, args) {
+  const j = await mcpPost('tools/call', { name, arguments: args || {} });
   const text = j?.result?.content?.[0]?.text;
   return text ? JSON.parse(text) : null;
 }
@@ -40,10 +46,13 @@ module.exports = async function handler(req, res) {
     return res.json({ ..._cache.data, cached: true });
   }
 
-  // Activities always come from MCP (no auth needed)
   const activitiesP = mcpTool('list_activities', { limit: 5 }).catch(() => []);
 
-  // Wellness from garmin-connect (requires env vars)
+  // Discover what tools the MCP server offers
+  const mcpToolsP = mcpPost('tools/list', {})
+    .then(j => (j?.result?.tools || []).map(t => t.name))
+    .catch(() => []);
+
   let wellness = {};
   const hasEnv = !!(process.env.GARMIN_EMAIL && process.env.GARMIN_PASSWORD);
   if (hasEnv) {
@@ -71,8 +80,8 @@ module.exports = async function handler(req, res) {
     } catch (e) { wellness = { _error: e.message }; }
   }
 
-  const activities = await activitiesP;
-  const data = { wellness, hasEnv, activities: Array.isArray(activities) ? activities : [] };
+  const [activities, mcpTools] = await Promise.all([activitiesP, mcpToolsP]);
+  const data = { wellness, hasEnv, mcpTools, activities: Array.isArray(activities) ? activities : [] };
   _cache = { data, ts: Date.now() };
   res.json({ ...data, cached: false });
 };
