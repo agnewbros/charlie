@@ -4,6 +4,7 @@ const MCP = 'https://garmin.amalgama.co/api/v1/mcp/7e260090-9ba6-4724-8027-f39f3
 
 let _cache = { data: null, ts: 0 };
 const CACHE_MS = 10 * 60 * 1000;
+// debug: bump this to bust cache after deploys
 
 let _gc = null;
 let _gcTs = 0;
@@ -34,7 +35,8 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=60');
 
-  if (_cache.data && Date.now() - _cache.ts < CACHE_MS) {
+  const bust = req.query && req.query.bust;
+  if (!bust && _cache.data && Date.now() - _cache.ts < CACHE_MS) {
     return res.json({ ..._cache.data, cached: true });
   }
 
@@ -65,7 +67,7 @@ module.exports = async function handler(req, res) {
         stress:     st?.overallStressLevel ?? st?.avgStressLevel ?? null,
         sleep:      sleepSec != null ? Math.round(sleepSec / 360) / 10 : null,
       };
-    } catch (_) {}
+    } catch (e) { wellness = { _error: e.message }; }
   }
 
   const activities = await activitiesP;
