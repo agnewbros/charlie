@@ -1803,6 +1803,211 @@ img, video, canvas, svg { max-width: 100%; }
   font-size: 12px; color: var(--text-2);
   font-family: var(--font-mono); font-variant-numeric: tabular-nums;
 }
+/* ============================================================
+   SESSION-FIRST WORKOUT UI
+   ============================================================ */
+.sess-week-badge {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-3);
+}
+.sess-nav-row { display: flex; align-items: center; gap: 10px; margin: 10px 0 8px; }
+.sess-nav-btn {
+  background: rgba(255,255,255,0.07); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text-2); font-size: 20px;
+  width: 38px; height: 38px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.sess-nav-btn:active { background: rgba(255,255,255,0.14); }
+.sess-day-label { flex: 1; font-size: 21px; font-weight: 700; color: var(--text-1); text-align: center; }
+.sess-last-info { font-size: 12px; color: var(--text-3); }
+.sess-header-preview-notice {
+  display: none; font-size: 11px; color: var(--warn);
+  background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.18);
+  border-radius: 8px; padding: 5px 10px; margin-top: 8px; text-align: center;
+}
+.sess-nav-row.is-preview ~ .sess-header-preview-notice { display: block; }
+
+/* Exercise cards */
+.sess-ex-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 18px; margin-bottom: 12px;
+}
+.sess-ex-name { font-size: 17px; font-weight: 700; color: var(--text-1); margin-bottom: 3px; }
+.sess-ex-last { font-size: 12px; color: var(--text-3); margin-bottom: 8px; }
+.sess-ex-suggestion {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(107,227,164,0.08); border: 1px solid rgba(107,227,164,0.2);
+  border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600;
+  color: var(--good); margin-bottom: 14px;
+}
+.sess-ex-suggestion.warn { background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.2); color: var(--warn); }
+.sess-ex-suggestion.neutral { background: rgba(255,255,255,0.04); border-color: var(--border); color: var(--text-2); }
+.sess-sets { display: flex; flex-direction: column; }
+.sess-set-row {
+  display: grid; grid-template-columns: 28px 1fr 1fr 46px;
+  gap: 8px; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.sess-set-row:last-child { border-bottom: none; }
+.sess-set-num {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-4); text-align: center;
+}
+.sess-set-row.is-done .sess-set-num { color: var(--good); font-size: 16px; }
+.sess-bw .sess-set-row { grid-template-columns: 28px 1fr 46px; }
+.sess-input-wrap { display: flex; flex-direction: column; gap: 3px; }
+.sess-adj-row { display: grid; grid-template-columns: 38px 1fr 38px; gap: 3px; }
+.sess-adj {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; color: var(--text-1); font-size: 20px;
+  cursor: pointer; min-height: 46px;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.sess-adj:active { background: rgba(255,255,255,0.14); transform: scale(0.92); }
+.sess-val-input {
+  text-align: center; background: rgba(0,0,0,0.28);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
+  color: var(--text-1); font-family: inherit; font-size: 20px; font-weight: 700;
+  font-variant-numeric: tabular-nums; padding: 4px 2px; min-height: 46px; outline: none;
+  -moz-appearance: textfield;
+}
+.sess-val-input::-webkit-outer-spin-button,
+.sess-val-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.sess-val-input:focus { border-color: rgba(255,255,255,0.32); }
+.sess-input-lbl {
+  text-align: center; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-4);
+}
+.sess-tick-btn {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(110,231,183,0.08); border: 2px solid rgba(110,231,183,0.25);
+  color: var(--good); font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  align-self: center; -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s; flex-shrink: 0;
+}
+.sess-tick-btn:active { transform: scale(0.88); }
+.is-done .sess-tick-btn { background: rgba(110,231,183,0.22); border-color: rgba(110,231,183,0.55); }
+.sess-ex-target {
+  margin-top: 10px; font-size: 11px; color: var(--text-4); font-family: var(--font-mono);
+}
+
+/* Finish session button */
+.sess-finish-btn {
+  width: 100%; padding: 16px; margin-bottom: 14px;
+  background: linear-gradient(180deg,#ffffff 0%,#e8e5dd 100%);
+  border: 1px solid rgba(255,255,255,0.85); color: #0a0a0b;
+  border-radius: 14px; font-family: inherit; font-size: 16px; font-weight: 700;
+  cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 4px 14px rgba(0,0,0,0.40);
+  -webkit-tap-highlight-color: transparent;
+}
+.sess-finish-btn:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+.sess-finish-btn:not(:disabled):active { transform: scale(0.98); }
+
+/* Session complete panel */
+.sess-complete-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.72);
+  z-index: 200; display: flex; align-items: flex-end;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.sess-complete-bg.show { opacity: 1; pointer-events: all; }
+.sess-complete-panel {
+  background: #111113; border: 1px solid var(--border);
+  border-radius: 24px 24px 0 0; width: 100%;
+  padding: 28px 20px calc(24px + env(safe-area-inset-bottom));
+  max-height: 90vh; overflow-y: auto;
+}
+.sess-complete-eyebrow {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--good); margin-bottom: 6px;
+}
+.sess-complete-title { font-size: 24px; font-weight: 800; color: var(--text-1); margin-bottom: 18px; }
+.sess-complete-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
+}
+.sess-complete-stat {
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px;
+}
+.sess-complete-stat-val { font-size: 22px; font-weight: 700; color: var(--text-1); font-variant-numeric: tabular-nums; }
+.sess-complete-stat-lbl { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.sess-complete-prs {
+  background: rgba(107,227,164,0.07); border: 1px solid rgba(107,227,164,0.18);
+  border-radius: 12px; padding: 14px; margin-bottom: 16px;
+}
+.sess-complete-prs-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--good); margin-bottom: 8px;
+}
+.sess-complete-pr-item { font-size: 13px; color: var(--text-2); margin-bottom: 3px; }
+.sess-complete-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.sess-next-btn {
+  width: 100%; padding: 15px;
+  background: linear-gradient(180deg,#ffffff 0%,#e8e5dd 100%);
+  border: 1px solid rgba(255,255,255,0.85); color: #0a0a0b;
+  border-radius: 12px; font-family: inherit; font-size: 15px; font-weight: 700;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 4px 14px rgba(0,0,0,0.40);
+}
+.sess-close-btn {
+  width: 100%; padding: 13px; background: transparent;
+  border: 1px solid var(--border); border-radius: 12px;
+  color: var(--text-2); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+
+/* Plan editor in settings */
+.sess-plan-day {
+  background: rgba(255,255,255,0.025); border: 1px solid var(--border);
+  border-radius: 12px; margin-bottom: 10px; overflow: hidden;
+}
+.sess-plan-day-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+}
+.sess-plan-day-label {
+  flex: 1; font-size: 14px; font-weight: 600; color: var(--text-1);
+  background: transparent; border: none; outline: none; font-family: inherit; min-width: 0;
+}
+.sess-plan-day-del {
+  background: none; border: none; color: var(--text-4); font-size: 12px;
+  cursor: pointer; padding: 0 4px; white-space: nowrap;
+}
+.sess-plan-ex-list { padding: 8px 10px 10px; }
+.sess-plan-ex-row { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; flex-wrap: wrap; }
+.sess-plan-ex-name {
+  flex: 1; min-width: 90px; padding: 7px 10px;
+  background: rgba(0,0,0,0.28); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text-1); font-family: inherit; font-size: 13px; outline: none;
+}
+.sess-plan-ex-num {
+  width: 52px; padding: 7px 6px; text-align: center;
+  background: rgba(0,0,0,0.28); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text-1); font-family: inherit; font-size: 13px; outline: none;
+  -moz-appearance: textfield;
+}
+.sess-plan-ex-num::-webkit-outer-spin-button,
+.sess-plan-ex-num::-webkit-inner-spin-button { -webkit-appearance: none; }
+.sess-plan-ex-lbl { font-size: 10px; color: var(--text-4); font-family: var(--font-mono); white-space: nowrap; }
+.sess-plan-ex-del {
+  background: none; border: none; color: var(--text-4); font-size: 15px; cursor: pointer; padding: 0 4px;
+}
+.sess-plan-add-ex {
+  width: 100%; padding: 8px; margin-top: 4px;
+  background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.14);
+  border-radius: 8px; color: var(--text-3); font-family: inherit; font-size: 12px; cursor: pointer;
+}
+.sess-counter-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.sess-counter-lbl { font-size: 13px; color: var(--text-2); flex: 1; }
+.sess-counter-val { font-family: var(--font-mono); font-size: 12px; color: var(--text-3); }
+.sess-reset-btn {
+  padding: 6px 10px; background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text-2); font-family: inherit; font-size: 12px; cursor: pointer;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="credentials.js"></script>
@@ -2031,23 +2236,23 @@ img, video, canvas, svg { max-width: 100%; }
     </button>
   </div>
 
-  <!-- Today's Workout -->
-  <div class="po-tw card" id="todayCard">
-    <div class="po-tw-head">
-      <div>
-        <div class="po-tw-eyebrow" id="poTwDateLabel">TODAY</div>
-        <div class="po-tw-summary">
-          <span class="po-tw-summary-num" id="poTwSetCount">0</span>
-          <span class="po-tw-summary-label">sets</span>
-          <span class="po-tw-summary-sep">·</span>
-          <span class="po-tw-summary-vol" id="poTwTotalVol">0 kg lifted</span>
-        </div>
-      </div>
-      <button class="po-tw-done-btn" id="poTwDoneBtn" type="button">Mark done</button>
+  <!-- Session Header -->
+  <div class="card" id="sessHeaderCard" style="margin-bottom:12px">
+    <div class="sess-week-badge" id="sessWeekBadge">Week 1</div>
+    <div class="sess-nav-row" id="sessNavRow">
+      <button class="sess-nav-btn" id="sessNavPrev" type="button">‹</button>
+      <div class="sess-day-label" id="sessDayLabel">Day A</div>
+      <button class="sess-nav-btn" id="sessNavNext" type="button">›</button>
     </div>
-    <ul class="po-tw-list" id="poTwList"></ul>
-    <div class="po-tw-empty" id="poTwEmpty">Press + to log an exercise.</div>
+    <div class="sess-last-info" id="sessLastInfo"></div>
+    <div class="sess-header-preview-notice">Previewing — tap Finish Session to advance</div>
   </div>
+
+  <!-- Exercise Cards -->
+  <div id="sessExCards"></div>
+
+  <!-- Finish Session -->
+  <button class="sess-finish-btn" id="sessFinishBtn" type="button" disabled>Finish Session</button>
 
   <button type="button" class="po-tw-past-toggle" id="poTwPastToggle" aria-expanded="false">
     <span>Past workouts <span class="po-tw-past-count" id="poTwPastCount">0</span></span>
@@ -2122,6 +2327,17 @@ img, video, canvas, svg { max-width: 100%; }
     <div class="po-set-section">
       <h4>Exercises</h4>
       <div class="po-set-list" id="setExercises"></div>
+    </div>
+
+    <div class="po-set-section">
+      <h4>Workout Plan</h4>
+      <div class="sess-counter-row">
+        <span class="sess-counter-lbl">Current position</span>
+        <span class="sess-counter-val" id="setPlanCount"></span>
+        <button class="sess-reset-btn" id="setPlanReset" type="button">Reset</button>
+      </div>
+      <div id="setPlanDays"></div>
+      <button class="po-add-row-btn" id="setPlanAddDay" type="button">+ Add day</button>
     </div>
 
     <div class="po-set-section">
@@ -2202,6 +2418,32 @@ img, video, canvas, svg { max-width: 100%; }
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Session Complete -->
+<div class="sess-complete-bg" id="sessCompleteBg">
+  <div class="sess-complete-panel">
+    <div class="sess-complete-eyebrow">Workout complete</div>
+    <div class="sess-complete-title" id="sessCompleteTitle">Session done!</div>
+    <div class="sess-complete-stats">
+      <div class="sess-complete-stat">
+        <div class="sess-complete-stat-val" id="sessCompleteSets">0</div>
+        <div class="sess-complete-stat-lbl">Total sets</div>
+      </div>
+      <div class="sess-complete-stat">
+        <div class="sess-complete-stat-val" id="sessCompleteVol">0</div>
+        <div class="sess-complete-stat-lbl">Volume lifted</div>
+      </div>
+    </div>
+    <div class="sess-complete-prs" id="sessCompletePrs" style="display:none">
+      <div class="sess-complete-prs-title">Personal Records</div>
+      <div id="sessCompletePrList"></div>
+    </div>
+    <div class="sess-complete-actions">
+      <button class="sess-next-btn" id="sessNextDayBtn" type="button">Start next session →</button>
+      <button class="sess-close-btn" id="sessCompleteClose" type="button">Close</button>
+    </div>
   </div>
 </div>
 
@@ -2773,6 +3015,7 @@ img, video, canvas, svg { max-width: 100%; }
 
   function renderAll() {
     renderDayPill();
+    renderSession();
     renderTodaysWorkout();
     renderPastWorkouts();
     renderProgBar();
@@ -2836,51 +3079,7 @@ img, video, canvas, svg { max-width: 100%; }
   }
 
   function renderTodaysWorkout() {
-    const todayKey = wtDateKey(new Date());
-    const all = logsByDay();
-    const todaySets = all[todayKey] || [];
-    const sum = summarizeDay(todaySets);
-    const u = state.units;
-
-    const eyebrow = $('poTwDateLabel');
-    const dows = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-    const mons = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    const d = new Date();
-    const _progs = loadPrograms();
-    const _prog = _progs ? _progs.programs[_progs.activeId] : null;
-    const _multiProg = _progs && Object.keys(_progs.programs).length >= 2;
-    eyebrow.textContent = 'TODAY · ' + dows[d.getDay()] + ', ' + mons[d.getMonth()] + ' ' + d.getDate()
-      + (_multiProg && _prog ? ' — ' + _prog.name : '');
-
-    $('poTwSetCount').textContent = sum.totalSets;
-    $('poTwTotalVol').textContent = Math.round(sum.totalVol).toLocaleString() + ' ' + u + ' lifted';
-
-    const list = $('poTwList');
-    const empty = $('poTwEmpty');
-    if (sum.totalSets === 0) {
-      list.innerHTML = '';
-      empty.classList.remove('hidden');
-    } else {
-      empty.classList.add('hidden');
-      list.innerHTML = sum.perEx.map(e => {
-        const chips = e.sets.map(s => {
-          const v = e.ex.bw ? s.reps + 'r' : s.weight + u + '×' + s.reps;
-          return '<span class="po-tw-chip">' + v + '</span>';
-        }).join('');
-        return '<li class="po-tw-row">'
-          + '<div class="po-tw-row-name">' + escape(e.ex.name) + '</div>'
-          + '<div class="po-tw-chips">' + chips + '</div>'
-          + '</li>';
-      }).join('');
-    }
-
-    // Done button state
-    const btn = $('poTwDoneBtn');
-    const isDone = !!doneDays[todayKey];
-    btn.textContent = isDone ? '✓ Done' : 'Mark workout done';
-    btn.classList.toggle('is-done', isDone);
-    btn.disabled = sum.totalSets === 0 && !isDone;
-    btn.style.opacity = btn.disabled ? '0.4' : '';
+    // Today's workout card replaced by session UI — this function is a no-op.
   }
 
   function renderPastWorkouts() {
@@ -2916,17 +3115,7 @@ img, video, canvas, svg { max-width: 100%; }
     }).join('');
   }
 
-  $('poTwDoneBtn').addEventListener('click', () => {
-    const todayKey = wtDateKey(new Date());
-    if (doneDays[todayKey]) {
-      delete doneDays[todayKey];
-    } else {
-      doneDays[todayKey] = new Date().toISOString();
-    }
-    saveDoneDays(doneDays);
-    renderTodaysWorkout();
-    renderPastWorkouts();
-  });
+  // poTwDoneBtn removed (replaced by session UI)
   $('poTwPastToggle').addEventListener('click', () => {
     const body = $('poTwPastBody');
     const toggle = $('poTwPastToggle');
@@ -3157,6 +3346,7 @@ img, video, canvas, svg { max-width: 100%; }
   }
   $('settingsBtn').addEventListener('click', () => {
     renderSettings();
+    renderPlanEditor();
     $('setModalBg').classList.add('show');
   });
 
@@ -4524,6 +4714,496 @@ img, video, canvas, svg { max-width: 100%; }
   });
 
   // ============================================================
+  // SESSION-FIRST WORKOUT SYSTEM
+  // po_session_v1 = { days, sessionCount }
+  // po_session_buffer_v1 = { date, dayId, sessionCount, sets }
+  // ============================================================
+  const SESSION_KEY = 'po_session_v1';
+  const BUFFER_KEY = 'po_session_buffer_v1';
+
+  function loadSession() {
+    try { const r = localStorage.getItem(SESSION_KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; }
+  }
+  function saveSession(sess) {
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify(sess)); } catch (e) {}
+  }
+  function loadSessBuffer() {
+    try { const r = localStorage.getItem(BUFFER_KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; }
+  }
+  function saveSessBuffer(buf) {
+    try { localStorage.setItem(BUFFER_KEY, JSON.stringify(buf)); } catch (e) {}
+  }
+  function clearSessBuffer() {
+    try { localStorage.removeItem(BUFFER_KEY); } catch (e) {}
+  }
+
+  // On first load, build session plan from existing program config
+  function migrateSession() {
+    if (loadSession()) return;
+    var prog = getActiveProgram();
+    var exercises = prog ? (prog.exercises || []) : (state.exercises || []);
+    var days = prog ? (prog.days || []) : (state.days || []);
+    var dayMap = {};
+    days.forEach(function(d) { dayMap[d.id] = { id: d.id, label: d.name, exercises: [] }; });
+    exercises.forEach(function(ex) {
+      if (!dayMap[ex.day]) return;
+      dayMap[ex.day].exercises.push({
+        exId: ex.id, name: ex.name,
+        sets: 3, repMin: ex.repMin || 5, repMax: ex.repMax || 10,
+        startWeight: ex.startWeight || 0, step: ex.step || 2.5, bw: !!ex.bw
+      });
+    });
+    var planDays = Object.values(dayMap).filter(function(d) { return d.exercises.length > 0; });
+    if (!planDays.length) planDays = [{ id: 'day_a', label: 'Day A', exercises: [] }];
+    saveSession({ days: planDays, sessionCount: 0 });
+  }
+  migrateSession();
+
+  var _sessPreviewOffset = 0;  // nav offset from actual current day
+  var _sessBuffer = null;      // current in-session buffer (in-memory)
+
+  function sessCurrentDayIdx(sess) {
+    return sess.sessionCount % Math.max(1, sess.days.length);
+  }
+  function sessCurrentWeek(sess) {
+    return Math.floor(sess.sessionCount / Math.max(1, sess.days.length)) + 1;
+  }
+  function sessViewDayIdx(sess) {
+    var n = Math.max(1, sess.days.length);
+    return ((sessCurrentDayIdx(sess) + _sessPreviewOffset) % n + n) % n;
+  }
+  function sessViewDay(sess) {
+    return sess.days[sessViewDayIdx(sess)] || null;
+  }
+
+  function sessGetLastPerf(exId) {
+    var logs = (state.logs[exId] || []).slice();
+    if (!logs.length) return null;
+    var lastDate = logs[logs.length - 1].date.slice(0, 10);
+    return { date: lastDate, sets: logs.filter(function(l) { return l.date.slice(0, 10) === lastDate; }) };
+  }
+
+  function sessSuggest(exCfg) {
+    var logs = (state.logs[exCfg.exId] || []).slice();
+    var exLike = {
+      repMin: exCfg.repMin || 5, repMax: exCfg.repMax || 10,
+      step: exCfg.step || 2.5, bw: exCfg.bw, startWeight: exCfg.startWeight || 0
+    };
+    return getRx(exLike, logs);
+  }
+
+  function sessBufferSetResult(buf, exId, setIndex, weight, reps) {
+    if (!buf.sets) buf.sets = [];
+    var ex = buf.sets.find(function(s) { return s.exId === exId && s.setIndex === setIndex; });
+    if (ex) { ex.weight = weight; ex.reps = reps; ex.completed = true; }
+    else buf.sets.push({ exId: exId, setIndex: setIndex, weight: weight, reps: reps, completed: true });
+    return buf;
+  }
+  function sessBufferGetSetResult(buf, exId, setIndex) {
+    if (!buf || !buf.sets) return null;
+    return buf.sets.find(function(s) { return s.exId === exId && s.setIndex === setIndex; }) || null;
+  }
+
+  // ---- Render session header and exercise cards ----
+  function renderSession() {
+    var sess = loadSession();
+    if (!sess || !sess.days || !sess.days.length) {
+      $('sessHeaderCard').innerHTML = '<div style="color:var(--text-3);font-size:13px">No workout plan. Open Settings and add days under Workout Plan.</div>';
+      $('sessExCards').innerHTML = '';
+      $('sessFinishBtn').disabled = true;
+      return;
+    }
+    renderSessHeader(sess);
+    renderSessExCards(sess);
+    updateSessFinishBtn();
+  }
+
+  function renderSessHeader(sess) {
+    var week = sessCurrentWeek(sess);
+    var curIdx = sessCurrentDayIdx(sess);
+    var viewIdx = sessViewDayIdx(sess);
+    var day = sessViewDay(sess);
+    var dayCount = sess.days.length;
+
+    $('sessWeekBadge').textContent = 'Week ' + week + ' · Session ' + (sess.sessionCount + 1);
+    $('sessDayLabel').textContent = day ? day.label : '—';
+
+    var isPreviewing = _sessPreviewOffset !== 0;
+    $('sessNavRow').classList.toggle('is-preview', isPreviewing);
+
+    // Last date any exercise in this day was done
+    var lastInfo = '';
+    if (day && day.exercises.length) {
+      var lastDate = '';
+      day.exercises.forEach(function(ex) {
+        var perf = sessGetLastPerf(ex.exId);
+        if (perf && (!lastDate || perf.date > lastDate)) lastDate = perf.date;
+      });
+      if (lastDate) {
+        var d = new Date(lastDate + 'T00:00:00');
+        var mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        lastInfo = 'Last done: ' + mons[d.getMonth()] + ' ' + d.getDate();
+      } else {
+        lastInfo = 'First time';
+      }
+    }
+    $('sessLastInfo').textContent = lastInfo;
+  }
+
+  function renderSessExCards(sess) {
+    var container = $('sessExCards');
+    var day = sessViewDay(sess);
+    if (!day || !day.exercises.length) {
+      container.innerHTML = '<div class="card" style="color:var(--text-3);font-size:13px;text-align:center;padding:24px 20px">No exercises in this day. Add them in Settings → Workout Plan.</div>';
+      return;
+    }
+
+    // Load/init buffer for the current (not preview) day
+    var curDay = sess.days[sessCurrentDayIdx(sess)];
+    var savedBuf = loadSessBuffer();
+    var validBuf = savedBuf && curDay && savedBuf.dayId === curDay.id && savedBuf.sessionCount === sess.sessionCount;
+    _sessBuffer = validBuf ? JSON.parse(JSON.stringify(savedBuf)) : {
+      date: wtDateKey(new Date()), dayId: day.id, sessionCount: sess.sessionCount, sets: []
+    };
+
+    container.innerHTML = '';
+    day.exercises.forEach(function(exCfg) {
+      container.appendChild(buildSessExCard(exCfg, sess));
+    });
+  }
+
+  function buildSessExCard(exCfg, sess) {
+    var card = document.createElement('div');
+    card.className = 'sess-ex-card' + (exCfg.bw ? ' sess-bw' : '');
+    card.dataset.exid = exCfg.exId;
+
+    var lastPerf = sessGetLastPerf(exCfg.exId);
+    var rx = sessSuggest(exCfg);
+    var u = unit();
+
+    var suggestedW = exCfg.startWeight || 0;
+    if (rx && !rx.bw) suggestedW = rx.weight;
+    var suggestedR = exCfg.repMin || 5;
+    if (rx) suggestedR = rx.reps;
+
+    // Last perf string
+    var lastPerfStr = 'No previous data — first session';
+    if (lastPerf && lastPerf.sets.length) {
+      var d0 = new Date(lastPerf.date + 'T00:00:00');
+      var mons0 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var s0 = lastPerf.sets[0];
+      lastPerfStr = 'Last: ' + (s0.weight > 0 ? s0.weight + u + ' × ' + s0.reps + ' reps' : s0.reps + ' reps')
+        + ' · ' + mons0[d0.getMonth()] + ' ' + d0.getDate();
+    }
+
+    // Suggestion chip
+    var suggClass = 'neutral', suggText = 'Start here';
+    if (rx) {
+      if (rx.type === 'up') suggClass = '';
+      else if (rx.type === 'down') suggClass = 'warn';
+      else suggClass = 'neutral';
+      suggText = rx.tag + ': ' + (rx.bw ? rx.reps + ' reps' : rx.weight + u + ' × ' + rx.reps);
+    }
+
+    var numSets = exCfg.sets || 3;
+    var viewIdx = sessViewDayIdx(sess);
+    var curIdx = sessCurrentDayIdx(sess);
+    var isPreviewing = viewIdx !== curIdx;
+
+    // Build HTML
+    var html = '<div class="sess-ex-name">' + escape(exCfg.name) + '</div>'
+      + '<div class="sess-ex-last">' + escape(lastPerfStr) + '</div>'
+      + '<div class="sess-ex-suggestion ' + suggClass + '">' + escape(suggText) + '</div>'
+      + '<div class="sess-sets">';
+
+    for (var i = 0; i < numSets; i++) {
+      var bufSet = sessBufferGetSetResult(_sessBuffer, exCfg.exId, i);
+      var completed = !!(bufSet && bufSet.completed);
+      var w = bufSet ? bufSet.weight : suggestedW;
+      var r = bufSet ? bufSet.reps : suggestedR;
+
+      html += '<div class="sess-set-row' + (completed ? ' is-done' : '') + '" data-si="' + i + '">'
+        + '<div class="sess-set-num">' + (completed ? '✓' : (i + 1)) + '</div>';
+
+      if (!exCfg.bw) {
+        html += '<div class="sess-input-wrap">'
+          + '<div class="sess-adj-row">'
+          + '<button class="sess-adj" type="button" data-field="w" data-dir="-1">−</button>'
+          + '<input class="sess-val-input" type="number" inputmode="decimal" value="' + (w || '') + '" placeholder="0"' + (isPreviewing ? ' readonly' : '') + '>'
+          + '<button class="sess-adj" type="button" data-field="w" data-dir="1">+</button>'
+          + '</div>'
+          + '<div class="sess-input-lbl">' + u + '</div>'
+          + '</div>';
+      }
+
+      html += '<div class="sess-input-wrap">'
+        + '<div class="sess-adj-row">'
+        + '<button class="sess-adj" type="button" data-field="r" data-dir="-1">−</button>'
+        + '<input class="sess-val-input" type="number" inputmode="numeric" value="' + r + '" placeholder="0"' + (isPreviewing ? ' readonly' : '') + '>'
+        + '<button class="sess-adj" type="button" data-field="r" data-dir="1">+</button>'
+        + '</div>'
+        + '<div class="sess-input-lbl">reps</div>'
+        + '</div>'
+        + '<button class="sess-tick-btn" type="button" aria-label="Mark set done"' + (isPreviewing ? ' disabled' : '') + '>✓</button>'
+        + '</div>';
+    }
+
+    html += '</div>';
+    if (!exCfg.bw) {
+      html += '<div class="sess-ex-target">Target: ' + (exCfg.repMin || 5) + '–' + (exCfg.repMax || 10) + ' reps · step ' + (exCfg.step || 2.5) + u + '</div>';
+    }
+
+    card.innerHTML = html;
+    wireSessExCard(card, exCfg, sess);
+    return card;
+  }
+
+  function wireSessExCard(card, exCfg, sess) {
+    var step = exCfg.step || 2.5;
+    card.querySelectorAll('.sess-set-row').forEach(function(row) {
+      var si = parseInt(row.dataset.si, 10);
+      var inputs = row.querySelectorAll('.sess-val-input');
+      var wIn = exCfg.bw ? null : inputs[0];
+      var rIn = exCfg.bw ? inputs[0] : inputs[1];
+
+      row.querySelectorAll('.sess-adj').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var dir = parseInt(btn.dataset.dir, 10);
+          if (btn.dataset.field === 'w' && wIn) {
+            var cur = parseFloat(wIn.value) || 0;
+            wIn.value = Math.max(0, Math.round((cur + dir * step) * 100) / 100) || '';
+          } else if (rIn) {
+            rIn.value = Math.max(1, (parseInt(rIn.value) || 0) + dir);
+          }
+        });
+      });
+
+      var tickBtn = row.querySelector('.sess-tick-btn');
+      if (tickBtn) {
+        tickBtn.addEventListener('click', function() {
+          var w = wIn ? (parseFloat(wIn.value) || 0) : 0;
+          var r = parseInt(rIn.value) || 0;
+          if (!r) return;
+
+          _sessBuffer = sessBufferSetResult(_sessBuffer, exCfg.exId, si, w, r);
+          saveSessBuffer(_sessBuffer);
+
+          // Write immediately to po_coach_v1 logs
+          if (!state.logs[exCfg.exId]) state.logs[exCfg.exId] = [];
+          state.logs[exCfg.exId].push({ weight: w, reps: r, date: wtDateKey(new Date()) });
+          registerExercise(exCfg.exId, exCfg.name);
+          saveState();
+
+          row.classList.add('is-done');
+          row.querySelector('.sess-set-num').textContent = '✓';
+          tickBtn.style.pointerEvents = 'none';
+
+          updateSessFinishBtn();
+          renderTodaysWorkout();
+          renderPastWorkouts();
+        });
+      }
+    });
+  }
+
+  function updateSessFinishBtn() {
+    var btn = $('sessFinishBtn');
+    var anyLogged = _sessBuffer && _sessBuffer.sets && _sessBuffer.sets.some(function(s) { return s.completed; });
+    btn.disabled = !anyLogged;
+  }
+
+  // Finish session
+  $('sessFinishBtn').addEventListener('click', function() {
+    if (!confirm('Finish this session and advance to the next day?')) return;
+    var sess = loadSession(); if (!sess) return;
+    var day = sessViewDay(sess);
+    var u = unit();
+
+    // Compute stats
+    var totalSets = 0, totalVol = 0, prs = [];
+    if (_sessBuffer && _sessBuffer.sets) {
+      _sessBuffer.sets.forEach(function(s) {
+        if (!s.completed) return;
+        totalSets++;
+        totalVol += (s.weight || 0) * (s.reps || 0);
+        // PR check — compare against all prior logs for this exercise
+        var allLogs = (state.logs[s.exId] || []).slice();
+        var prior = allLogs.slice(0, -(_sessBuffer.sets.filter(function(b) { return b.exId === s.exId && b.completed; }).length));
+        if (prior.length) {
+          var bestPrev1rm = Math.max.apply(null, prior.map(function(l) { return estimate1RM(l.weight || 0, l.reps || 0); }));
+          var cur1rm = estimate1RM(s.weight || 0, s.reps || 0);
+          if (cur1rm > bestPrev1rm * 1.005) {
+            var exCfg2 = day && day.exercises.find(function(e) { return e.exId === s.exId; });
+            var name2 = exCfg2 ? exCfg2.name : (loadRegistry()[s.exId] || s.exId);
+            if (!prs.find(function(p) { return p.exId === s.exId; })) {
+              prs.push({ exId: s.exId, name: name2, val: Math.round(cur1rm) + u + ' est. 1RM' });
+            }
+          }
+        }
+      });
+    }
+
+    // Advance counter
+    sess.sessionCount++;
+    saveSession(sess);
+    _sessPreviewOffset = 0;
+    clearSessBuffer();
+    _sessBuffer = null;
+
+    // Show complete panel
+    $('sessCompleteTitle').textContent = (day ? day.label : 'Session') + ' complete!';
+    $('sessCompleteSets').textContent = totalSets;
+    $('sessCompleteVol').textContent = Math.round(totalVol).toLocaleString() + ' ' + u;
+
+    var prsEl = $('sessCompletePrs');
+    if (prs.length) {
+      $('sessCompletePrList').innerHTML = prs.map(function(pr) {
+        return '<div class="sess-complete-pr-item">&#127942; ' + escape(pr.name) + ' — ' + pr.val + '</div>';
+      }).join('');
+      prsEl.style.display = 'block';
+    } else {
+      prsEl.style.display = 'none';
+    }
+
+    var nextSess = loadSession();
+    var nextDay = nextSess ? sessViewDay(nextSess) : null;
+    $('sessNextDayBtn').textContent = nextDay ? ('Start ' + nextDay.label + ' →') : 'Done';
+
+    $('sessCompleteBg').classList.add('show');
+    renderPastWorkouts();
+  });
+
+  $('sessNextDayBtn').addEventListener('click', function() {
+    $('sessCompleteBg').classList.remove('show');
+    renderSession();
+  });
+  $('sessCompleteClose').addEventListener('click', function() {
+    $('sessCompleteBg').classList.remove('show');
+    renderSession();
+  });
+
+  // Navigation arrows
+  $('sessNavPrev').addEventListener('click', function() {
+    _sessPreviewOffset--;
+    var sess = loadSession(); if (sess) { renderSessHeader(sess); renderSessExCards(sess); updateSessFinishBtn(); }
+  });
+  $('sessNavNext').addEventListener('click', function() {
+    _sessPreviewOffset++;
+    var sess = loadSession(); if (sess) { renderSessHeader(sess); renderSessExCards(sess); updateSessFinishBtn(); }
+  });
+
+  // ---- Plan Editor (called from renderSettings) ----
+  function renderPlanEditor() {
+    var sess = loadSession() || { days: [], sessionCount: 0 };
+    var week = sessCurrentWeek(sess);
+    $('setPlanCount').textContent = 'Week ' + week + ', Session ' + (sess.sessionCount + 1);
+    var container = $('setPlanDays');
+    container.innerHTML = '';
+
+    sess.days.forEach(function(day, di) {
+      var dayEl = document.createElement('div');
+      dayEl.className = 'sess-plan-day';
+
+      var exHtml = '';
+      (day.exercises || []).forEach(function(ex, ei) {
+        exHtml += '<div class="sess-plan-ex-row" data-ei="' + ei + '">'
+          + '<input class="sess-plan-ex-name" type="text" value="' + escape(ex.name || '') + '" placeholder="Exercise name">'
+          + '<input class="sess-plan-ex-num" type="number" min="1" max="10" value="' + (ex.sets || 3) + '" title="Sets">'
+          + '<span class="sess-plan-ex-lbl">sets</span>'
+          + '<input class="sess-plan-ex-num" type="number" min="1" max="30" value="' + (ex.repMin || 5) + '" title="Min reps">'
+          + '<span class="sess-plan-ex-lbl">–</span>'
+          + '<input class="sess-plan-ex-num" type="number" min="1" max="30" value="' + (ex.repMax || 10) + '" title="Max reps">'
+          + '<span class="sess-plan-ex-lbl">reps</span>'
+          + '<input class="sess-plan-ex-num" type="number" min="0" step="0.25" value="' + (ex.startWeight || 0) + '" title="Starting weight" style="width:58px">'
+          + '<span class="sess-plan-ex-lbl">' + unit() + '</span>'
+          + '<button class="sess-plan-ex-del" type="button" data-action="delex" title="Remove">×</button>'
+          + '</div>';
+      });
+
+      dayEl.innerHTML =
+        '<div class="sess-plan-day-header">'
+        + '<input class="sess-plan-day-label" type="text" value="' + escape(day.label || '') + '" placeholder="Day label">'
+        + '<button class="sess-plan-day-del" type="button" data-action="delday">× Remove day</button>'
+        + '</div>'
+        + '<div class="sess-plan-ex-list">'
+        + exHtml
+        + '<button class="sess-plan-add-ex" type="button" data-action="addex">+ Add exercise</button>'
+        + '</div>';
+
+      // Wire day label input
+      var labelInp = dayEl.querySelector('.sess-plan-day-label');
+      labelInp.addEventListener('input', function() {
+        sess.days[di].label = labelInp.value;
+        saveSession(sess);
+        var sess2 = loadSession(); if (sess2) renderSessHeader(sess2);
+      });
+
+      // Wire delete day
+      dayEl.querySelector('[data-action="delday"]').addEventListener('click', function() {
+        if (sess.days.length <= 1) { alert('Need at least one day.'); return; }
+        if (!confirm('Remove "' + day.label + '" and all its exercises from the plan?')) return;
+        sess.days.splice(di, 1);
+        if (sess.sessionCount >= sess.days.length) sess.sessionCount = 0;
+        saveSession(sess);
+        _sessPreviewOffset = 0;
+        renderPlanEditor();
+        renderSession();
+      });
+
+      // Wire exercise rows
+      dayEl.querySelectorAll('.sess-plan-ex-row').forEach(function(row, ei) {
+        var inp = row.querySelectorAll('input');
+        var nameI = inp[0], setsI = inp[1], repMinI = inp[2], repMaxI = inp[3], startWI = inp[4];
+        var exRef = sess.days[di].exercises[ei];
+
+        nameI.addEventListener('input', function() { exRef.name = nameI.value; saveSession(sess); });
+        setsI.addEventListener('change', function() { exRef.sets = parseInt(setsI.value) || 3; saveSession(sess); });
+        repMinI.addEventListener('change', function() { exRef.repMin = parseInt(repMinI.value) || 5; saveSession(sess); });
+        repMaxI.addEventListener('change', function() { exRef.repMax = parseInt(repMaxI.value) || 10; saveSession(sess); });
+        startWI.addEventListener('change', function() { exRef.startWeight = parseFloat(startWI.value) || 0; saveSession(sess); });
+
+        row.querySelector('[data-action="delex"]').addEventListener('click', function() {
+          sess.days[di].exercises.splice(ei, 1);
+          saveSession(sess);
+          renderPlanEditor();
+          renderSession();
+        });
+      });
+
+      // Add exercise
+      dayEl.querySelector('[data-action="addex"]').addEventListener('click', function() {
+        sess.days[di].exercises.push({
+          exId: uid(), name: '', sets: 3, repMin: 5, repMax: 10, startWeight: 0, step: 2.5, bw: false
+        });
+        saveSession(sess);
+        renderPlanEditor();
+      });
+
+      container.appendChild(dayEl);
+    });
+  }
+
+  $('setPlanAddDay').addEventListener('click', function() {
+    var sess = loadSession() || { days: [], sessionCount: 0 };
+    var letter = String.fromCharCode(65 + sess.days.length % 26);
+    sess.days.push({ id: 'day_' + Date.now(), label: 'Day ' + letter, exercises: [] });
+    saveSession(sess);
+    renderPlanEditor();
+  });
+
+  $('setPlanReset').addEventListener('click', function() {
+    var sess = loadSession(); if (!sess) return;
+    if (!confirm('Reset session counter to 0? This restarts from Week 1, Day A.')) return;
+    sess.sessionCount = 0;
+    saveSession(sess);
+    _sessPreviewOffset = 0;
+    clearSessBuffer();
+    _sessBuffer = null;
+    renderPlanEditor();
+    renderSession();
+  });
+
+  // ============================================================
   // BOOT
   // ============================================================
   renderAll();
@@ -4552,7 +5232,7 @@ img, video, canvas, svg { max-width: 100%; }
   const SUPABASE_KEY = (window.AppConfig && localStorage.getItem('user_supabase_key')) || '';
   const APP_KEY = 'po-coach';
   const PC_SYNCED_KEYS = ['po_coach_v1', 'po_coach_workout_done', 'po_coach_weights', 'po_coach_photos', PROGRAMS_KEY];
-  function pcIsGymKey(k) { return k && (k.startsWith('po_coach_') || k === PROGRAMS_KEY); }
+  function pcIsGymKey(k) { return k && (k.startsWith('po_coach_') || k === PROGRAMS_KEY || k === SESSION_KEY || k === BUFFER_KEY); }
 
   let pcSupa = null;
   let pcPushTimer = null;
@@ -4610,6 +5290,7 @@ img, video, canvas, svg { max-width: 100%; }
       const raw = localStorage.getItem(PHOTO_KEY);
       photos = raw ? JSON.parse(raw) : [];
     } catch { photos = []; }
+    try { _sessBuffer = loadSessBuffer(); } catch {}
     try { renderAll(); } catch {}
     try { wtRender(); } catch {}
     try { photosRender(); } catch {}
