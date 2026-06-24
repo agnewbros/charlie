@@ -850,11 +850,11 @@ const SLIDERS=[
   ['rStress','vStress','stress'],['rJoint','vJoint','joint_pain'],['rSleepQ','vSleepQ','sleep_quality']
 ];
 
-function scoreClass(s){ return s>=75?'high':s>=50?'medium':'low'; }
+function scoreClass(s){ return s>=70?'high':s>=45?'medium':'low'; }
 function readinessRec(s){
-  if(s>=75) return {txt:'High readiness — push performance today. Good conditions for a heavy or high-intensity session.',cls:''};
-  if(s>=50) return {txt:'Normal readiness — train as planned at moderate intensity. Listen to your body.',cls:'warn'};
-  return {txt:'Low readiness — consider a recovery session, reduced volume, or full rest day. Pushing hard today risks regression.',cls:'bad'};
+  if(s>=70) return {txt:'High readiness — push for performance. Good day for heavy lifts or a hard session.',cls:''};
+  if(s>=45) return {txt:'Good to train — stick to your planned session at normal intensity.',cls:'warn'};
+  return {txt:'Train lighter today — reduce load by 10–15% and focus on technique over intensity.',cls:'bad'};
 }
 
 let _lastReadinessVals=null;
@@ -888,7 +888,7 @@ function calcScore(vals,g){
   if(g&&g.resting_hr!=null&&g30hr>0){ const hf=Math.max(0,Math.min(1,1-(g.resting_hr-g30hr*0.9)/(g30hr*0.3))); gar+=hf*0.15; gw+=0.15; }
   if(gw>0) gar=gar/(0.5+gw)*gw+0.5*(1-gw);
 
-  return Math.max(5,Math.min(100,Math.round(sub*0.4+gar*0.6)*100/100));
+  return Math.max(5,Math.min(100,Math.round(sub*0.8+gar*0.2)*100/100));
 }
 
 async function initReadiness(){
