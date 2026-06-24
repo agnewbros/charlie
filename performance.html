@@ -245,21 +245,20 @@ input[type=date].pi-input{color-scheme:dark}
       <div class="pi-ex-pills" id="actPills"></div>
     </div>
     <div class="pi-card">
-      <div class="pi-card-title">Summary</div>
-      <div class="pi-stats pi-stats-4">
-        <div class="pi-stat"><span class="pi-stat-val" id="actSessions">—</span><span class="pi-stat-lbl">Sessions</span></div>
-        <div class="pi-stat"><span class="pi-stat-val" id="actDistVal">—</span><span class="pi-stat-lbl" id="actDistLbl">Avg Dist</span></div>
-        <div class="pi-stat"><span class="pi-stat-val" id="actHR">—</span><span class="pi-stat-lbl">Avg HR</span></div>
-        <div class="pi-stat"><span class="pi-stat-val" id="actCal">—</span><span class="pi-stat-lbl">Avg Cal</span></div>
+      <div class="pi-card-title">Current Performance</div>
+      <div class="pi-stats">
+        <div class="pi-stat"><span class="pi-stat-val" id="actLast">—</span><span class="pi-stat-lbl" id="actLastLbl">Last Session</span></div>
+        <div class="pi-stat"><span class="pi-stat-val" id="actWkVol">—</span><span class="pi-stat-lbl" id="actWkLbl">Wk Distance</span></div>
+        <div class="pi-stat"><span class="pi-stat-val" id="actBest">—</span><span class="pi-stat-lbl" id="actBestLbl">Session PR</span></div>
       </div>
     </div>
     <div class="pi-card">
-      <div class="pi-card-title" id="actChartLbl">Distance Trend (km)</div>
-      <div class="pi-chart-wrap"><canvas id="chartActDist"></canvas></div>
+      <div class="pi-card-title" id="actTrendLbl">Performance Trend</div>
+      <div class="pi-chart-wrap"><canvas id="chartActPerf"></canvas></div>
     </div>
     <div class="pi-card">
-      <div class="pi-card-title">Avg Heart Rate Trend</div>
-      <div class="pi-chart-wrap"><canvas id="chartActHR"></canvas></div>
+      <div class="pi-card-title" id="actVolLbl">Weekly Volume</div>
+      <div class="pi-chart-wrap"><canvas id="chartActVol"></canvas></div>
     </div>
     <div id="actInsight" class="pi-insight" style="display:none"></div>
   </div>
@@ -724,66 +723,85 @@ function makeActChart(id,label,labels,data,color){
 function renderActivities(typeKey){
   const acts=garminActivities.filter(a=>a.activity_type===typeKey);
   const gps=isGps(typeKey);
-  const withDist=acts.filter(a=>a.distance_m>100);
-  const withHR=acts.filter(a=>a.avg_hr);
-  const withCal=acts.filter(a=>a.calories);
-  const withDur=acts.filter(a=>a.duration_s);
-  const avgDist=withDist.length?avg(withDist.map(a=>a.distance_m/1000)):null;
-  const avgDur=withDur.length?Math.round(avg(withDur.map(a=>a.duration_s/60))):null;
-  const avgHR=withHR.length?Math.round(avg(withHR.map(a=>a.avg_hr))):null;
-  const avgCal=withCal.length?Math.round(avg(withCal.map(a=>a.calories))):null;
 
-  document.getElementById('actSessions').textContent=acts.length||'—';
-  document.getElementById('actHR').textContent=avgHR?avgHR+' bpm':'—';
-  document.getElementById('actCal').textContent=avgCal||'—';
-
-  if(gps&&avgDist!=null){
-    document.getElementById('actDistVal').textContent=avgDist.toFixed(1)+' km';
-    document.getElementById('actDistLbl').textContent='Avg Dist';
-    document.getElementById('actChartLbl').textContent='Distance Trend (km)';
-  } else if(avgDur!=null){
-    document.getElementById('actDistVal').textContent=avgDur+' min';
-    document.getElementById('actDistLbl').textContent='Avg Time';
-    document.getElementById('actChartLbl').textContent='Duration Trend (min)';
-  } else {
-    document.getElementById('actDistVal').textContent='—';
-    document.getElementById('actDistLbl').textContent='Avg Dist';
+  // ── Stats ──────────────────────────────────────────────────────
+  // Last session value
+  const lastAct=acts[acts.length-1]||null;
+  let lastVal=null;
+  if(lastAct){
+    if(gps&&lastAct.distance_m>100) lastVal=+(lastAct.distance_m/1000).toFixed(1);
+    else if(lastAct.duration_s) lastVal=Math.round(lastAct.duration_s/60);
   }
 
+  // This week total
+  const wkCut=new Date(); wkCut.setDate(wkCut.getDate()-7);
+  const wkActs=acts.filter(a=>new Date(a.start_date+'T12:00:00')>=wkCut);
+  let wkVol=0;
+  if(gps) wkVol=wkActs.reduce((s,a)=>s+(a.distance_m||0)/1000,0);
+  else wkVol=wkActs.reduce((s,a)=>s+(a.duration_s||0)/60,0);
+
+  // PR (best single session)
+  let bestVal=0;
+  if(gps) bestVal=Math.max(0,...acts.filter(a=>a.distance_m>100).map(a=>a.distance_m/1000));
+  else bestVal=Math.max(0,...acts.filter(a=>a.duration_s).map(a=>a.duration_s/60));
+
+  const fmtG=v=>gps?v.toFixed(1):Math.round(v);
+  const u=gps?'km':'min';
+
+  document.getElementById('actLast').textContent=lastVal!=null?fmtG(lastVal)+u:'—';
+  document.getElementById('actLastLbl').textContent=gps?'Last Dist':'Last Duration';
+  document.getElementById('actWkVol').textContent=wkVol>0?fmtG(wkVol)+u:'—';
+  document.getElementById('actWkLbl').textContent=gps?'Wk Distance':'Wk Duration';
+  document.getElementById('actBest').textContent=bestVal>0?fmtG(bestVal)+u:'—';
+  document.getElementById('actBestLbl').textContent=gps?'Dist PR':'Duration PR';
+
+  // ── Charts ─────────────────────────────────────────────────────
+  // Per-session trend (last 30) — mirrors 1RM trend
   const recent=acts.slice(-30);
   const dates=recent.map(a=>dlbl(a.start_date));
-
   if(gps){
-    makeActChart('chartActDist','Distance km',dates,recent.map(a=>a.distance_m>0?+(a.distance_m/1000).toFixed(2):null),'#6ee7b7');
+    document.getElementById('actTrendLbl').textContent='Distance per Session (km)';
+    makeActChart('chartActPerf','Distance km',dates,recent.map(a=>a.distance_m>100?+(a.distance_m/1000).toFixed(2):null),'#6ee7b7');
   } else {
-    makeActChart('chartActDist','Duration min',dates,recent.map(a=>a.duration_s>0?Math.round(a.duration_s/60):null),'#a78bfa');
+    document.getElementById('actTrendLbl').textContent='Duration per Session (min)';
+    makeActChart('chartActPerf','Duration min',dates,recent.map(a=>a.duration_s>0?Math.round(a.duration_s/60):null),'#a78bfa');
   }
-  makeActChart('chartActHR','Avg HR',dates,recent.map(a=>a.avg_hr||null),'#ff8a8a');
 
-  // insight
+  // Weekly volume — mirrors volume chart
+  const byWk={};
+  acts.forEach(function(a){
+    const wk=weekKey(a.start_date);
+    if(gps) byWk[wk]=(byWk[wk]||0)+(a.distance_m||0)/1000;
+    else byWk[wk]=(byWk[wk]||0)+(a.duration_s||0)/60;
+  });
+  const volData=Object.entries(byWk).sort((a,b)=>a[0].localeCompare(b[0])).slice(-14);
+  document.getElementById('actVolLbl').textContent=gps?'Weekly Distance (km)':'Weekly Duration (min)';
+  makeActChart('chartActVol',gps?'km':'min',volData.map(v=>dlbl(v[0])),volData.map(v=>gps?+v[1].toFixed(1):Math.round(v[1])),'#60a5fa');
+
+  // ── Insight ────────────────────────────────────────────────────
   const insEl=document.getElementById('actInsight');
   if(acts.length>=6){
     const half=Math.floor(acts.length/2);
     const first=acts.slice(0,half); const last=acts.slice(half);
     const weeks=Math.max(1,Math.round((new Date(acts[acts.length-1].start_date)-new Date(acts[0].start_date))/(7*86400000)));
     let txt=''; let cls='';
-    if(gps&&withDist.length>=4){
-      const fd=avg(first.filter(a=>a.distance_m>100).map(a=>a.distance_m)||[0]);
-      const ld=avg(last.filter(a=>a.distance_m>100).map(a=>a.distance_m)||[0]);
-      if(fd>0){
-        const pct=Math.round((ld-fd)/fd*100);
-        if(Math.abs(pct)<5) txt='Your '+actLabel(typeKey)+' distance has been consistent over '+weeks+' weeks.';
-        else if(pct>0){ txt='Average '+actLabel(typeKey)+' distance is up '+pct+'% over '+weeks+' weeks — volume is building well.'; }
-        else { txt=actLabel(typeKey)+' distance is down '+Math.abs(pct)+'% over '+weeks+' weeks. Check if this is intentional tapering or fatigue.'; cls='warn'; }
+    if(gps){
+      const fd=first.filter(a=>a.distance_m>100).map(a=>a.distance_m);
+      const ld=last.filter(a=>a.distance_m>100).map(a=>a.distance_m);
+      if(fd.length&&ld.length){
+        const pct=Math.round((avg(ld)-avg(fd))/avg(fd)*100);
+        if(Math.abs(pct)<5){ txt='Your '+actLabel(typeKey)+' distance has been consistent over '+weeks+' weeks.'; cls='warn'; }
+        else if(pct>0) txt='Average '+actLabel(typeKey)+' distance is up '+pct+'% over '+weeks+' weeks — volume building well.';
+        else { txt=actLabel(typeKey)+' distance is down '+Math.abs(pct)+'% recently. Consider whether this is intentional tapering or a sign of fatigue.'; cls='warn'; }
       }
-    } else if(withHR.length>=4){
-      const fh=avg(first.filter(a=>a.avg_hr).map(a=>a.avg_hr)||[0]);
-      const lh=avg(last.filter(a=>a.avg_hr).map(a=>a.avg_hr)||[0]);
-      if(fh>0){
-        const pct=Math.round((lh-fh)/fh*100);
-        if(pct<-5) txt='Average HR during '+actLabel(typeKey)+' has dropped '+Math.abs(pct)+'% over '+weeks+' weeks — aerobic fitness is improving.';
-        else if(pct>8){ txt='HR during '+actLabel(typeKey)+' is up '+pct+'% over '+weeks+' weeks — could indicate fatigue or increased intensity.'; cls='warn'; }
-        else txt=actLabel(typeKey)+' heart rate is stable over '+weeks+' weeks.';
+    } else {
+      const fd=first.filter(a=>a.duration_s).map(a=>a.duration_s);
+      const ld=last.filter(a=>a.duration_s).map(a=>a.duration_s);
+      if(fd.length&&ld.length){
+        const pct=Math.round((avg(ld)-avg(fd))/avg(fd)*100);
+        if(Math.abs(pct)<5) txt=actLabel(typeKey)+' session length is consistent over '+weeks+' weeks.';
+        else if(pct>0) txt='Average '+actLabel(typeKey)+' duration is up '+pct+'% over '+weeks+' weeks — you\'re putting in more time.';
+        else { txt=actLabel(typeKey)+' sessions have shortened '+Math.abs(pct)+'% recently.'; cls='warn'; }
       }
     }
     if(txt){ insEl.textContent=txt; insEl.className='pi-insight'+(cls?' '+cls:''); insEl.style.display='block'; }
