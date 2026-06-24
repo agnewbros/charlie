@@ -1,0 +1,16 @@
+{
+  "headers": [
+    {
+      "source": "/(.*\\.html)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, s-maxage=0" }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, s-maxage=0" }
+      ]
+    }
+  ]
+}
