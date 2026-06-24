@@ -217,6 +217,114 @@ img, video, canvas, svg { max-width: 100%; }
 .po-day-split { color: var(--good); font-weight: 800; }
 .po-day-split.is-rest { color: #7DD3FC; }
 
+/* ---- Program switcher bar ---- */
+.po-prog-bar {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.po-prog-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+  cursor: pointer; flex: 1; min-width: 0;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.po-prog-pill:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: var(--border-strong);
+}
+.po-prog-pill-name {
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Program modal — step switcher */
+.prog-step { display: none; }
+.prog-step.active { display: block; }
+.prog-new-label {
+  display: block; font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-3); margin-bottom: 8px;
+}
+.prog-new-input {
+  width: 100%; padding: 12px 14px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.28);
+  color: var(--text-1); border-radius: 12px;
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  box-sizing: border-box; outline: none;
+}
+.prog-new-input:focus { border-color: rgba(255,255,255,0.40); }
+.prog-day-builder, .prog-rot-builder, .prog-ex-builder {
+  display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;
+}
+.prog-builder-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.prog-builder-row input, .prog-builder-row select {
+  flex: 1; min-width: 0;
+  background: transparent; border: none; outline: none;
+  color: var(--text-1); font-family: inherit; font-size: 13px; padding: 2px 0;
+}
+.prog-builder-row select { cursor: pointer; }
+.prog-builder-row select option { background: #111113; }
+.prog-mini-del {
+  background: transparent; border: none; color: var(--text-4);
+  font-size: 16px; cursor: pointer; padding: 2px 6px;
+  -webkit-tap-highlight-color: transparent; flex-shrink: 0;
+}
+.prog-mini-del:hover { color: var(--bad); }
+.prog-rot-handle {
+  color: var(--text-4); font-size: 14px; cursor: grab; flex-shrink: 0;
+  padding: 2px 4px;
+}
+.prog-ex-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px;
+}
+.prog-ex-grid input, .prog-ex-grid select {
+  padding: 8px 10px;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-1); font-family: inherit; font-size: 12px;
+  outline: none;
+}
+.prog-ex-grid input:focus, .prog-ex-grid select:focus { border-color: rgba(255,255,255,0.4); }
+.prog-switch-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.prog-switch-row:hover { background: rgba(255,255,255,0.05); }
+.prog-switch-row.is-active {
+  background: rgba(110,231,183,0.06);
+  border-color: rgba(110,231,183,0.25);
+}
+.prog-switch-info { flex: 1; min-width: 0; }
+.prog-switch-name { font-size: 14px; font-weight: 700; color: var(--text-1); }
+.prog-switch-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; font-family: var(--font-mono); }
+.prog-switch-check { color: var(--good); font-size: 18px; margin-left: 10px; }
+.prog-section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-3);
+  margin: 14px 0 6px;
+}
+.prog-section-hint {
+  font-size: 11px; color: var(--text-3); margin-bottom: 8px; line-height: 1.4;
+}
+
 .po-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 18px;
@@ -1735,6 +1843,14 @@ img, video, canvas, svg { max-width: 100%; }
     <span class="po-day-split" id="dayPillSplit">—</span>
   </button>
 
+  <div class="po-prog-bar">
+    <button class="po-prog-pill" id="progPill" type="button" title="Switch program">
+      <span class="po-prog-pill-name" id="progPillName">Program 1</span>
+      <span style="opacity:0.45;flex-shrink:0">▾</span>
+    </button>
+    <button class="po-icon-btn" id="progNewBtn" title="New program" type="button" style="font-size:20px;font-weight:300;line-height:1">+</button>
+  </div>
+
   <!-- WEIGHT + PROGRESS PHOTOS -->
   <div class="wt-section">
     <div class="wt-divider"><span>WEIGHT</span></div>
@@ -1959,6 +2075,14 @@ img, video, canvas, svg { max-width: 100%; }
 <div class="po-modal-bg" id="setModalBg">
   <div class="po-modal" style="max-width: 480px;">
     <h3>Settings</h3>
+    <div id="setProgHeader" style="font-size:10px;letter-spacing:0.16em;font-weight:700;text-transform:uppercase;color:var(--text-3);font-family:var(--font-mono);margin:-6px 0 14px;"></div>
+
+    <div class="po-set-section">
+      <h4>Program Name</h4>
+      <div class="po-set-row">
+        <input type="text" id="setProgName" placeholder="Program name" style="font-size:14px;font-weight:600">
+      </div>
+    </div>
 
     <div class="po-set-section">
       <h4>Units</h4>
@@ -1990,9 +2114,74 @@ img, video, canvas, svg { max-width: 100%; }
       <input type="file" id="setImportFile" accept=".json" style="display:none">
     </div>
 
+    <div id="setDeleteProgWrap" style="display:none;margin-top:8px">
+      <span class="po-delete-link" id="setDeleteProg">Delete this program</span>
+    </div>
+
     <div class="po-modal-actions">
       <button class="po-btn-primary" id="setModalClose">Done</button>
     </div>
+  </div>
+</div>
+
+<!-- Program Switcher Modal -->
+<div class="po-modal-bg" id="progSwitchBg">
+  <div class="po-modal">
+    <h3>Switch Program</h3>
+    <div id="progSwitchList"></div>
+    <div class="po-modal-actions" style="margin-top:14px">
+      <button class="po-btn-secondary" id="progSwitchClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Program Modal -->
+<div class="po-modal-bg" id="progNewBg">
+  <div class="po-modal" style="max-height:92vh">
+
+    <!-- Step 1: Name -->
+    <div class="prog-step active" id="progNewS1">
+      <h3>New Program</h3>
+      <div style="margin-bottom:16px">
+        <label class="prog-new-label">Program name</label>
+        <input type="text" class="prog-new-input" id="progNewName" placeholder="e.g. Push Pull Legs Phase 2" maxlength="60">
+      </div>
+      <div class="po-modal-actions">
+        <button class="po-btn-secondary" id="progNewCancel">Cancel</button>
+        <button class="po-btn-primary" id="progNewS1Next">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Days + Rotation -->
+    <div class="prog-step" id="progNewS2">
+      <h3>Training Days</h3>
+      <div class="prog-section-label">Days</div>
+      <div class="prog-day-builder" id="progDayList"></div>
+      <button class="po-add-row-btn" id="progAddDay">+ Add day</button>
+
+      <div class="prog-section-label" style="margin-top:18px">Split Rotation</div>
+      <div class="prog-section-hint">Order your days cycle. Include rest days. Use ↑↓ to reorder.</div>
+      <div class="prog-rot-builder" id="progRotList"></div>
+      <button class="po-add-row-btn" id="progAddRot">+ Add to rotation</button>
+
+      <div class="po-modal-actions" style="margin-top:18px">
+        <button class="po-btn-secondary" id="progNewS2Back">← Back</button>
+        <button class="po-btn-primary" id="progNewS2Next">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Exercises -->
+    <div class="prog-step" id="progNewS3">
+      <h3>Exercises</h3>
+      <div class="prog-section-hint">Name each exercise, assign it a day and gym.</div>
+      <div class="prog-ex-builder" id="progExList"></div>
+      <button class="po-add-row-btn" id="progAddEx">+ Add exercise</button>
+      <div class="po-modal-actions" style="margin-top:18px">
+        <button class="po-btn-secondary" id="progNewS3Back">← Back</button>
+        <button class="po-btn-primary" id="progCreateBtn">Create program →</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2031,11 +2220,93 @@ img, video, canvas, svg { max-width: 100%; }
 <script>
 (function() {
   // ============================================================
+  // MULTI-PROGRAM MANAGEMENT
+  // po_programs_v1 = { activeId, programs: { id: programObj } }
+  // Log key: prog_1 → po_coach_v1 (backward compat), others → po_coach_{id}
+  // ============================================================
+  const PROGRAMS_KEY = 'po_programs_v1';
+
+  function loadPrograms() {
+    try { const r = localStorage.getItem(PROGRAMS_KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; }
+  }
+  function savePrograms(p) {
+    try { localStorage.setItem(PROGRAMS_KEY, JSON.stringify(p)); } catch (e) {}
+  }
+  function getActiveProgram() {
+    const p = loadPrograms(); return p ? (p.programs[p.activeId] || null) : null;
+  }
+  function getLogKey() {
+    const p = loadPrograms();
+    const id = p ? p.activeId : 'prog_1';
+    return id === 'prog_1' ? 'po_coach_v1' : 'po_coach_' + id;
+  }
+
+  // Migration: creates po_programs_v1 from existing po_coach_v1 state.
+  // Idempotent — safe to call multiple times.
+  function migrateToMultiProgram() {
+    if (localStorage.getItem(PROGRAMS_KEY)) return;
+    let s = {};
+    try { const r = localStorage.getItem('po_coach_v1'); if (r) s = JSON.parse(r); } catch (e) {}
+    const exercises = (Array.isArray(s.exercises) && s.exercises.length) ? s.exercises : buildDefaultExercises();
+    const days = (Array.isArray(s.days) && s.days.length) ? s.days : CONFIG.days.slice();
+    let splitRotation;
+    if (Array.isArray(s.splitRotation) && s.splitRotation.length) {
+      splitRotation = s.splitRotation.slice();
+    } else {
+      splitRotation = (CONFIG.splitRotation || ['push','pull','legs','rest']).map(function(x) {
+        var d = (CONFIG.days || []).find(function(d) { return d.id === x; });
+        return d ? d.name : (x === 'rest' ? 'Rest' : x.charAt(0).toUpperCase() + x.slice(1));
+      });
+    }
+    let splitAnchor;
+    if (s.splitAnchor && s.splitAnchor.date && s.splitAnchor.index != null) {
+      splitAnchor = { date: s.splitAnchor.date, index: s.splitAnchor.index };
+    } else {
+      var oldId = (CONFIG.splitAnchor && CONFIG.splitAnchor.splitId) || null;
+      var idx = 0;
+      if (oldId) {
+        var oldName = (CONFIG.days || []).find(function(d) { return d.id === oldId; });
+        var targetName = oldName ? oldName.name : (oldId === 'rest' ? 'Rest' : oldId);
+        var found = splitRotation.findIndex(function(n) { return n.toLowerCase() === targetName.toLowerCase(); });
+        if (found >= 0) idx = found;
+      }
+      splitAnchor = {
+        date: (CONFIG.splitAnchor && CONFIG.splitAnchor.date) || new Date().toISOString().slice(0, 10),
+        index: idx
+      };
+    }
+    var prog1 = {
+      id: 'prog_1', name: 'Program 1',
+      createdAt: new Date().toISOString().slice(0, 10),
+      exercises, days, splitRotation, splitAnchor,
+      units: s.units || CONFIG.units || 'kg',
+      upgradeAtReps: CONFIG.upgradeAtReps || 8
+    };
+    savePrograms({ activeId: 'prog_1', programs: { prog_1: prog1 } });
+  }
+  migrateToMultiProgram();
+
+  // Sync active program config back to po_programs_v1 after state changes.
+  var _lastSyncedProgJson = null;
+  function syncActiveProgram() {
+    var progs = loadPrograms(); if (!progs) return;
+    var prog = progs.programs[progs.activeId]; if (!prog) return;
+    prog.exercises = state.exercises;
+    prog.days = state.days;
+    prog.splitRotation = state.splitRotation;
+    prog.splitAnchor = state.splitAnchor;
+    prog.units = state.units;
+    var json = JSON.stringify(progs);
+    if (json === _lastSyncedProgJson) return;
+    _lastSyncedProgJson = json;
+    try { localStorage.setItem(PROGRAMS_KEY, json); } catch (e) {}
+  }
+
+  // ============================================================
   // STATE — all logs + edits live in browser localStorage. Each
   // device has its own copy. Export JSON from settings if you
   // want to back up or move to another device.
   // ============================================================
-  const LS_KEY = 'po_coach_v1';
 
   function buildDefaultExercises() {
     return CONFIG.defaultExercises.map((e, i) => Object.assign({
@@ -2044,48 +2315,57 @@ img, video, canvas, svg { max-width: 100%; }
   }
   function loadState() {
     try {
-      const raw = localStorage.getItem(LS_KEY);
+      const raw = localStorage.getItem(getLogKey());
       if (raw) return normalize(JSON.parse(raw));
     } catch (e) {}
     return normalize({});
   }
   function normalize(s) {
     s = s || {};
-    s.units = s.units || CONFIG.units || 'kg';
+    var prog = getActiveProgram();
+    s.units = s.units || (prog && prog.units) || CONFIG.units || 'kg';
     s.gyms  = (Array.isArray(s.gyms)  && s.gyms.length)  ? s.gyms  : CONFIG.gyms.slice();
-    s.days  = (Array.isArray(s.days)  && s.days.length)  ? s.days  : CONFIG.days.slice();
-    s.exercises = Array.isArray(s.exercises) ? s.exercises : buildDefaultExercises();
+    s.days  = (Array.isArray(s.days)  && s.days.length)  ? s.days  :
+              ((prog && prog.days && prog.days.length) ? prog.days.slice() : CONFIG.days.slice());
+    s.exercises = (Array.isArray(s.exercises) && s.exercises.length) ? s.exercises :
+                  ((prog && prog.exercises && prog.exercises.length) ? prog.exercises.slice() : buildDefaultExercises());
     s.logs = (s.logs && typeof s.logs === 'object') ? s.logs : {};
-    s.filterGym = s.filterGym || s.gyms[0].id;
-    s.filterDay = s.filterDay || s.days[0].id;
-    // Split rotation lives in state so the user can edit it via the pill modal.
-    // Stored as a plain array of names (e.g. ["Push", "Pull", "Legs", "Rest"]).
+    s.filterGym = s.filterGym || (s.gyms[0] && s.gyms[0].id);
+    s.filterDay = s.filterDay || (s.days[0] && s.days[0].id);
+    // Split rotation — stored as plain name array (e.g. ["Push", "Pull", "Legs", "Rest"]).
     if (!Array.isArray(s.splitRotation) || !s.splitRotation.length) {
-      s.splitRotation = (CONFIG.splitRotation || ['Push', 'Pull', 'Legs', 'Rest']).map(x =>
-        // CONFIG used ids — map id → display name where possible
-        (CONFIG.days || []).find(d => d.id === x) ? (CONFIG.days.find(d => d.id === x).name) :
-        (x === 'rest' ? 'Rest' : x.charAt(0).toUpperCase() + x.slice(1))
-      );
+      if (prog && prog.splitRotation && prog.splitRotation.length) {
+        s.splitRotation = prog.splitRotation.slice();
+      } else {
+        s.splitRotation = (CONFIG.splitRotation || ['Push', 'Pull', 'Legs', 'Rest']).map(x =>
+          (CONFIG.days || []).find(d => d.id === x) ? (CONFIG.days.find(d => d.id === x).name) :
+          (x === 'rest' ? 'Rest' : x.charAt(0).toUpperCase() + x.slice(1))
+        );
+      }
     }
     if (!s.splitAnchor || !s.splitAnchor.date || s.splitAnchor.index == null) {
-      // Map old anchor-by-id to new anchor-by-index, or default to today=index 0.
-      const oldId = (CONFIG.splitAnchor && CONFIG.splitAnchor.splitId) || null;
-      let idx = 0;
-      if (oldId) {
-        const oldName = (CONFIG.days || []).find(d => d.id === oldId);
-        const targetName = oldName ? oldName.name : (oldId === 'rest' ? 'Rest' : oldId);
-        const found = s.splitRotation.findIndex(n => n.toLowerCase() === targetName.toLowerCase());
-        if (found >= 0) idx = found;
+      if (prog && prog.splitAnchor && prog.splitAnchor.date && prog.splitAnchor.index != null) {
+        s.splitAnchor = { date: prog.splitAnchor.date, index: prog.splitAnchor.index };
+      } else {
+        const oldId = (CONFIG.splitAnchor && CONFIG.splitAnchor.splitId) || null;
+        let idx = 0;
+        if (oldId) {
+          const oldName = (CONFIG.days || []).find(d => d.id === oldId);
+          const targetName = oldName ? oldName.name : (oldId === 'rest' ? 'Rest' : oldId);
+          const found = s.splitRotation.findIndex(n => n.toLowerCase() === targetName.toLowerCase());
+          if (found >= 0) idx = found;
+        }
+        s.splitAnchor = {
+          date: (CONFIG.splitAnchor && CONFIG.splitAnchor.date) || new Date().toISOString().slice(0, 10),
+          index: idx
+        };
       }
-      s.splitAnchor = {
-        date: (CONFIG.splitAnchor && CONFIG.splitAnchor.date) || new Date().toISOString().slice(0, 10),
-        index: idx
-      };
     }
     return s;
   }
   function saveState() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+    try { localStorage.setItem(getLogKey(), JSON.stringify(state)); } catch (e) {}
+    syncActiveProgram();
   }
   let state = loadState();
   document.getElementById('appTitle').textContent = CONFIG.appTitle || 'Progressive Overload Coach';
@@ -2123,7 +2403,8 @@ img, video, canvas, svg { max-width: 100%; }
     const last = logs[logs.length - 1];
     const { weight, reps } = last;
     const { repMin, repMax, step, bw } = ex;
-    const upgradeAt = Math.min(CONFIG.upgradeAtReps || 8, repMax);
+    const _prog = getActiveProgram();
+    const upgradeAt = Math.min((_prog && _prog.upgradeAtReps) || CONFIG.upgradeAtReps || 8, repMax);
     let stuck = 0;
     for (let i = logs.length - 1; i >= 0; i--) {
       if (logs[i].weight === weight) stuck++; else break;
@@ -2397,10 +2678,30 @@ img, video, canvas, svg { max-width: 100%; }
     row.dataset.value = String(active);
   }
 
+  function renderProgBar() {
+    var progs = loadPrograms();
+    var prog = progs ? progs.programs[progs.activeId] : null;
+    var name = prog ? prog.name : 'Program 1';
+    var truncated = name.length > 20 ? name.slice(0, 20) + '…' : name;
+    var el = document.getElementById('progPillName');
+    if (el) el.textContent = truncated;
+  }
+
+  function reinitForProgram(id) {
+    var progs = loadPrograms(); if (!progs || !progs.programs[id]) return;
+    progs.activeId = id; savePrograms(progs);
+    _lastSyncedProgJson = null; // force resync
+    state = loadState();
+    renderAll();
+    wtRender();
+    renderProgBar();
+  }
+
   function renderAll() {
     renderDayPill();
     renderTodaysWorkout();
     renderPastWorkouts();
+    renderProgBar();
   }
 
   // ============================================================
@@ -2471,7 +2772,11 @@ img, video, canvas, svg { max-width: 100%; }
     const dows = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
     const mons = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     const d = new Date();
-    eyebrow.textContent = 'TODAY · ' + dows[d.getDay()] + ', ' + mons[d.getMonth()] + ' ' + d.getDate();
+    const _progs = loadPrograms();
+    const _prog = _progs ? _progs.programs[_progs.activeId] : null;
+    const _multiProg = _progs && Object.keys(_progs.programs).length >= 2;
+    eyebrow.textContent = 'TODAY · ' + dows[d.getDay()] + ', ' + mons[d.getMonth()] + ' ' + d.getDate()
+      + (_multiProg && _prog ? ' — ' + _prog.name : '');
 
     $('poTwSetCount').textContent = sum.totalSets;
     $('poTwTotalVol').textContent = Math.round(sum.totalVol).toLocaleString() + ' ' + u + ' lifted';
@@ -2681,6 +2986,13 @@ img, video, canvas, svg { max-width: 100%; }
   // SETTINGS MODAL (gyms, days, units, data)
   // ============================================================
   function renderSettings() {
+    const _sp = loadPrograms();
+    const _spProg = _sp ? _sp.programs[_sp.activeId] : null;
+    $('setProgHeader').textContent = 'Editing: ' + (_spProg ? _spProg.name : 'Program 1');
+    $('setProgName').value = _spProg ? _spProg.name : '';
+    const _canDelete = _sp && Object.keys(_sp.programs).length >= 2;
+    $('setDeleteProgWrap').style.display = _canDelete ? 'block' : 'none';
+
     $('setUnitsSeg').querySelectorAll('button').forEach(b => {
       b.classList.toggle('active', b.dataset.u === state.units);
     });
@@ -2728,6 +3040,270 @@ img, video, canvas, svg { max-width: 100%; }
   $('settingsBtn').addEventListener('click', () => {
     renderSettings();
     $('setModalBg').classList.add('show');
+  });
+
+  // ============================================================
+  // PROGRAM SWITCHER MODAL
+  // ============================================================
+  function renderProgSwitchList() {
+    const progs = loadPrograms(); if (!progs) return;
+    const list = $('progSwitchList');
+    list.innerHTML = Object.values(progs.programs).map(pg => {
+      const isActive = pg.id === progs.activeId;
+      const exCount = (pg.exercises || []).length;
+      const date = pg.createdAt || '';
+      return '<div class="prog-switch-row' + (isActive ? ' is-active' : '') + '" data-id="' + pg.id + '">'
+        + '<div class="prog-switch-info">'
+        +   '<div class="prog-switch-name">' + escape(pg.name) + '</div>'
+        +   '<div class="prog-switch-meta">' + (date ? date + ' · ' : '') + exCount + ' exercises</div>'
+        + '</div>'
+        + (isActive ? '<span class="prog-switch-check">✓</span>' : '')
+        + '</div>';
+    }).join('');
+    list.querySelectorAll('.prog-switch-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const id = row.dataset.id;
+        $('progSwitchBg').classList.remove('show');
+        if (id !== progs.activeId) reinitForProgram(id);
+      });
+    });
+  }
+  $('progPill').addEventListener('click', () => {
+    renderProgSwitchList();
+    $('progSwitchBg').classList.add('show');
+  });
+  $('progSwitchClose').addEventListener('click', () => $('progSwitchBg').classList.remove('show'));
+
+  // ============================================================
+  // NEW PROGRAM MODAL (3 steps)
+  // ============================================================
+  var _np = { name: '', days: [], rotation: [] };  // draft state
+
+  function slugify(name) { return name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') || ('d_' + Date.now()); }
+
+  function npShowStep(n) {
+    ['progNewS1','progNewS2','progNewS3'].forEach(function(id, i) {
+      var el = document.getElementById(id);
+      if (el) el.classList.toggle('active', i + 1 === n);
+    });
+  }
+
+  function npRenderDays() {
+    var list = $('progDayList');
+    list.innerHTML = '';
+    _np.days.forEach(function(name, i) {
+      var row = document.createElement('div');
+      row.className = 'prog-builder-row';
+      row.innerHTML = '<input type="text" value="' + escape(name) + '" placeholder="e.g. Push" maxlength="30">'
+        + '<button type="button" class="prog-mini-del">×</button>';
+      row.querySelector('input').addEventListener('input', function(e) {
+        _np.days[i] = e.target.value;
+        npSyncRotDropdowns();
+      });
+      row.querySelector('.prog-mini-del').addEventListener('click', function() {
+        _np.days.splice(i, 1);
+        npRenderDays();
+        npRenderRotation();
+      });
+      list.appendChild(row);
+    });
+  }
+
+  function npRotOptions() {
+    var opts = _np.days.map(function(n) {
+      return '<option value="' + escape(n || 'Day') + '">' + escape(n || 'Day') + '</option>';
+    }).join('');
+    return opts + '<option value="Rest">Rest</option>';
+  }
+
+  function npSyncRotDropdowns() {
+    $('progRotList').querySelectorAll('select').forEach(function(sel, i) {
+      var cur = sel.value;
+      sel.innerHTML = npRotOptions();
+      sel.value = cur;
+    });
+  }
+
+  function npRenderRotation() {
+    var list = $('progRotList');
+    list.innerHTML = '';
+    _np.rotation.forEach(function(val, i) {
+      var row = document.createElement('div');
+      row.className = 'prog-builder-row';
+      row.innerHTML = '<span class="prog-rot-handle">⠿</span>'
+        + '<select>' + npRotOptions() + '</select>'
+        + '<button type="button" class="rot-mini" data-action="up" aria-label="Move up">↑</button>'
+        + '<button type="button" class="rot-mini" data-action="down" aria-label="Move down">↓</button>'
+        + '<button type="button" class="prog-mini-del">×</button>';
+      var sel = row.querySelector('select');
+      sel.value = val;
+      sel.addEventListener('change', function() { _np.rotation[i] = sel.value; });
+      row.querySelector('[data-action="up"]').addEventListener('click', function() {
+        if (i === 0) return;
+        var tmp = _np.rotation[i - 1]; _np.rotation[i - 1] = _np.rotation[i]; _np.rotation[i] = tmp;
+        npRenderRotation();
+      });
+      row.querySelector('[data-action="down"]').addEventListener('click', function() {
+        if (i >= _np.rotation.length - 1) return;
+        var tmp = _np.rotation[i + 1]; _np.rotation[i + 1] = _np.rotation[i]; _np.rotation[i] = tmp;
+        npRenderRotation();
+      });
+      row.querySelector('.prog-mini-del').addEventListener('click', function() {
+        _np.rotation.splice(i, 1); npRenderRotation();
+      });
+      list.appendChild(row);
+    });
+  }
+
+  function npExRow(dayOpts) {
+    var row = document.createElement('div');
+    row.style.cssText = 'background:rgba(255,255,255,0.025);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;position:relative';
+    row.innerHTML =
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
+      + '<input type="text" placeholder="Exercise name" style="flex:1;padding:8px 10px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-family:inherit;font-size:13px;outline:none" class="npExName">'
+      + '<button type="button" class="prog-mini-del" style="flex-shrink:0">×</button>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
+      +   '<select class="npExDay" style="padding:8px 10px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-family:inherit;font-size:12px;outline:none">'
+      +     dayOpts
+      +   '</select>'
+      +   '<select class="npExGym" style="padding:8px 10px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-family:inherit;font-size:12px;outline:none">'
+      +     CONFIG.gyms.map(function(g) { return '<option value="' + g.id + '">' + g.name + '</option>'; }).join('')
+      +     '<option value="both">Both</option>'
+      +   '</select>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">'
+      +   '<input type="number" placeholder="Min reps" class="npExRepMin" style="padding:8px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-family:inherit;font-size:12px;outline:none;text-align:center" min="1" value="5">'
+      +   '<input type="number" placeholder="Max reps" class="npExRepMax" style="padding:8px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-family:inherit;font-size:12px;outline:none;text-align:center" min="1" value="10">'
+      +   '<input type="number" placeholder="Step" class="npExStep" style="padding:8px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-family:inherit;font-size:12px;outline:none;text-align:center" min="0.25" step="0.25" value="2.5">'
+      +   '<input type="number" placeholder="Start kg" class="npExStart" style="padding:8px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-family:inherit;font-size:12px;outline:none;text-align:center" min="0" value="0">'
+      + '</div>';
+    row.querySelector('.prog-mini-del').addEventListener('click', function() { row.remove(); });
+    return row;
+  }
+
+  function npOpenModal() {
+    _np = { name: '', days: ['Push','Pull','Legs'], rotation: ['Push','Pull','Legs','Rest'] };
+    $('progNewName').value = '';
+    npShowStep(1);
+    $('progNewBg').classList.add('show');
+  }
+
+  $('progNewBtn').addEventListener('click', npOpenModal);
+  $('progNewCancel').addEventListener('click', function() { $('progNewBg').classList.remove('show'); });
+
+  // Step 1 → Step 2
+  $('progNewS1Next').addEventListener('click', function() {
+    _np.name = ($('progNewName').value || '').trim();
+    if (!_np.name) { $('progNewName').focus(); return; }
+    npRenderDays();
+    npRenderRotation();
+    npShowStep(2);
+  });
+
+  // Step 2: add day
+  $('progAddDay').addEventListener('click', function() {
+    _np.days.push('');
+    npRenderDays();
+    var inputs = $('progDayList').querySelectorAll('input');
+    var last = inputs[inputs.length - 1];
+    if (last) { last.focus(); last.select(); }
+  });
+
+  // Step 2: add rotation entry
+  $('progAddRot').addEventListener('click', function() {
+    _np.rotation.push(_np.days[0] || 'Rest');
+    npRenderRotation();
+  });
+
+  // Step 2 → Back to step 1
+  $('progNewS2Back').addEventListener('click', function() { npShowStep(1); });
+
+  // Step 2 → Step 3
+  $('progNewS2Next').addEventListener('click', function() {
+    // Sync day values from inputs
+    $('progDayList').querySelectorAll('input').forEach(function(inp, i) { _np.days[i] = inp.value.trim(); });
+    _np.days = _np.days.filter(Boolean);
+    if (!_np.days.length) { alert('Add at least one training day.'); return; }
+    // Build exercise list with 3 blank rows
+    var exList = $('progExList');
+    exList.innerHTML = '';
+    var dayOpts = _np.days.map(function(n) { return '<option value="' + escape(n) + '">' + escape(n) + '</option>'; }).join('');
+    for (var ii = 0; ii < 3; ii++) exList.appendChild(npExRow(dayOpts));
+    npShowStep(3);
+  });
+
+  // Step 3: add exercise row
+  $('progAddEx').addEventListener('click', function() {
+    var dayOpts = _np.days.map(function(n) { return '<option value="' + escape(n) + '">' + escape(n) + '</option>'; }).join('');
+    var row = npExRow(dayOpts);
+    $('progExList').appendChild(row);
+    setTimeout(function() { var inp = row.querySelector('.npExName'); if (inp) inp.focus(); }, 50);
+  });
+
+  // Step 3 → Back
+  $('progNewS3Back').addEventListener('click', function() { npShowStep(2); });
+
+  // Create program
+  $('progCreateBtn').addEventListener('click', function() {
+    // Collect exercises
+    var exercises = [];
+    $('progExList').querySelectorAll('div[style*="border-radius:10px"]').forEach(function(row) {
+      var name = (row.querySelector('.npExName').value || '').trim();
+      if (!name) return;
+      var dayName = row.querySelector('.npExDay').value;
+      var gymId = row.querySelector('.npExGym').value;
+      var repMin = parseInt(row.querySelector('.npExRepMin').value) || 5;
+      var repMax = parseInt(row.querySelector('.npExRepMax').value) || 10;
+      var step = parseFloat(row.querySelector('.npExStep').value) || 2.5;
+      var startWeight = parseFloat(row.querySelector('.npExStart').value) || 0;
+      var dayId = slugify(dayName);
+      exercises.push({ id: 'ex_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name, gym: gymId, day: dayId, repMin, repMax, step, startWeight });
+    });
+    if (!exercises.length) { alert('Add at least one exercise with a name.'); return; }
+
+    // Build days with slugified ids
+    var days = _np.days.filter(Boolean).map(function(n) { return { id: slugify(n), name: n }; });
+
+    // Build rotation using slugified ids (map display names → ids)
+    var nameToId = {};
+    days.forEach(function(d) { nameToId[d.name] = d.id; });
+    var splitRotation = _np.rotation.map(function(n) { return nameToId[n] || n; });
+
+    // Sync rotation dropdown values
+    $('progRotList').querySelectorAll('select').forEach(function(sel, i) {
+      splitRotation[i] = nameToId[sel.value] || sel.value;
+    });
+
+    // For the rotation, store as display names (same format as prog_1)
+    var rotNames = _np.rotation.map(function(n, i) {
+      if ($('progRotList').querySelectorAll('select')[i]) {
+        return $('progRotList').querySelectorAll('select')[i].value;
+      }
+      return n;
+    });
+
+    var id = 'prog_' + Date.now();
+    var firstDayId = days[0] ? days[0].id : 'day_1';
+    var prog = {
+      id, name: _np.name,
+      createdAt: new Date().toISOString().slice(0, 10),
+      exercises,
+      days,
+      splitRotation: rotNames,
+      splitAnchor: { date: new Date().toISOString().slice(0, 10), index: 0 },
+      units: (getActiveProgram() || {}).units || CONFIG.units || 'kg',
+      upgradeAtReps: CONFIG.upgradeAtReps || 8
+    };
+
+    var progs = loadPrograms() || { activeId: 'prog_1', programs: {} };
+    progs.programs[id] = prog;
+    progs.activeId = id;
+    _lastSyncedProgJson = null;
+    savePrograms(progs);
+
+    $('progNewBg').classList.remove('show');
+    reinitForProgram(id);
   });
   $('setModalClose').addEventListener('click', () => {
     $('setModalBg').classList.remove('show');
@@ -2780,10 +3356,50 @@ img, video, canvas, svg { max-width: 100%; }
   });
   $('setReset').addEventListener('click', () => {
     if (!confirm('Delete EVERYTHING (logs, edits, gyms, days)? This cannot be undone.')) return;
-    localStorage.removeItem(LS_KEY);
+    // Remove all program log keys
+    const _rp = loadPrograms();
+    if (_rp) {
+      Object.keys(_rp.programs).forEach(id => {
+        const k = id === 'prog_1' ? 'po_coach_v1' : 'po_coach_' + id;
+        try { localStorage.removeItem(k); } catch (e) {}
+      });
+    }
+    localStorage.removeItem(PROGRAMS_KEY);
+    _lastSyncedProgJson = null;
+    migrateToMultiProgram();
     state = loadState();
     $('setModalBg').classList.remove('show');
     renderAll();
+    wtRender();
+  });
+
+  // Program rename
+  $('setProgName').addEventListener('input', () => {
+    const _p = loadPrograms(); if (!_p) return;
+    const _pg = _p.programs[_p.activeId]; if (!_pg) return;
+    const newName = $('setProgName').value.trim();
+    if (!newName) return;
+    _pg.name = newName;
+    _lastSyncedProgJson = null;
+    savePrograms(_p);
+    $('setProgHeader').textContent = 'Editing: ' + newName;
+    renderProgBar();
+  });
+
+  // Program delete
+  $('setDeleteProg').addEventListener('click', () => {
+    const _p = loadPrograms(); if (!_p) return;
+    const _pg = _p.programs[_p.activeId]; if (!_pg) return;
+    if (Object.keys(_p.programs).length < 2) return;
+    if (!confirm('Delete "' + _pg.name + '"? This will also delete all logged sets for this program. This cannot be undone.')) return;
+    const _lk = getLogKey();
+    if (_lk !== 'po_coach_v1') { try { localStorage.removeItem(_lk); } catch (e) {} }
+    delete _p.programs[_p.activeId];
+    _p.activeId = 'prog_1';
+    _lastSyncedProgJson = null;
+    savePrograms(_p);
+    $('setModalBg').classList.remove('show');
+    reinitForProgram('prog_1');
   });
 
   function escape(s) {
@@ -3711,7 +4327,8 @@ img, video, canvas, svg { max-width: 100%; }
   const SUPABASE_URL = (window.AppConfig && localStorage.getItem('user_supabase_url')) || '';
   const SUPABASE_KEY = (window.AppConfig && localStorage.getItem('user_supabase_key')) || '';
   const APP_KEY = 'po-coach';
-  const PC_SYNCED_KEYS = ['po_coach_v1', 'po_coach_workout_done', 'po_coach_weights', 'po_coach_photos'];
+  const PC_SYNCED_KEYS = ['po_coach_v1', 'po_coach_workout_done', 'po_coach_weights', 'po_coach_photos', PROGRAMS_KEY];
+  function pcIsGymKey(k) { return k && (k.startsWith('po_coach_') || k === PROGRAMS_KEY); }
 
   let pcSupa = null;
   let pcPushTimer = null;
@@ -3729,19 +4346,22 @@ img, video, canvas, svg { max-width: 100%; }
   localStorage.setItem = function(k, v) {
     _pcOrigSet(k, v);
     try {
-      if (!pcSuppressSync && PC_SYNCED_KEYS.indexOf(k) !== -1) pcSchedulePush();
+      if (!pcSuppressSync && pcIsGymKey(k)) pcSchedulePush();
     } catch (e) {}
   };
   localStorage.removeItem = function(k) {
     _pcOrigRemove(k);
     try {
-      if (!pcSuppressSync && PC_SYNCED_KEYS.indexOf(k) !== -1) pcSchedulePush();
+      if (!pcSuppressSync && pcIsGymKey(k)) pcSchedulePush();
     } catch (e) {}
   };
 
   function pcCollectState() {
     const out = {};
-    for (const k of PC_SYNCED_KEYS) {
+    // Collect all po_coach_* keys + programs key
+    for (let _i = 0; _i < localStorage.length; _i++) {
+      const k = localStorage.key(_i);
+      if (!k || !pcIsGymKey(k)) continue;
       const v = localStorage.getItem(k);
       if (v == null) continue;
       try { out[k] = JSON.parse(v); } catch {}
@@ -3759,9 +4379,8 @@ img, video, canvas, svg { max-width: 100%; }
   }
 
   function pcRerender() {
-    // Reload every closure variable that mirrors a synced localStorage
-    // key — otherwise renderAll/wtRender/photosRender would read stale
-    // in-memory copies from before the remote pull.
+    // Reload every closure variable that mirrors a synced localStorage key.
+    try { migrateToMultiProgram(); } catch {}
     try { state = loadState(); } catch {}
     try { wtEntries = wtLoad(); } catch {}
     try {
@@ -3778,19 +4397,20 @@ img, video, canvas, svg { max-width: 100%; }
     pcSuppressSync = true;
     let changed = false;
     try {
-      for (const k of PC_SYNCED_KEYS) {
-        if (k in remote) {
-          const incoming = JSON.stringify(remote[k]);
-          const local = localStorage.getItem(k);
-          if (local !== incoming) { try { _pcOrigSet(k, incoming); changed = true; } catch {} }
-        } else if (localStorage.getItem(k) != null) {
-          try { _pcOrigRemove(k); changed = true; } catch {}
-        }
+      const remoteKeys = Object.keys(remote);
+      for (const k of remoteKeys) {
+        if (!pcIsGymKey(k)) continue;
+        const incoming = JSON.stringify(remote[k]);
+        const local = localStorage.getItem(k);
+        if (local !== incoming) { try { _pcOrigSet(k, incoming); changed = true; } catch {} }
       }
     } finally {
       pcSuppressSync = false;
     }
-    if (changed) { try { pcRerender(); } catch (e) {} }
+    if (changed) {
+      _lastSyncedProgJson = null;
+      try { pcRerender(); } catch (e) {}
+    }
     return changed;
   }
 
