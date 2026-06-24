@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#0a0a0b">
 <title>Performance Intelligence</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="credentials.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="topbar.js" defer></script>
 <style>
@@ -234,6 +235,19 @@ input[type=date].pi-input{color-scheme:dark}
     <div id="healthInsight" class="pi-insight" style="display:none"></div>
     <div class="pi-div">Personal Baselines (30-day)</div>
     <div class="pi-card"><div id="blRows"><div style="color:var(--text-4);font-size:13px;text-align:center;padding:8px">Need 7+ days of data</div></div></div>
+    <div id="manualGarminWrap" style="display:none">
+      <div class="pi-div">Log Today's Metrics Manually</div>
+      <div class="pi-card">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div><div class="pi-label" style="margin-bottom:5px">Resting HR (bpm)</div><input type="number" class="pi-input" id="mHR" placeholder="e.g. 58" min="30" max="200"></div>
+          <div><div class="pi-label" style="margin-bottom:5px">Body Battery (0–100)</div><input type="number" class="pi-input" id="mBB" placeholder="e.g. 75" min="0" max="100"></div>
+          <div><div class="pi-label" style="margin-bottom:5px">Sleep (hours)</div><input type="number" class="pi-input" id="mSleep" placeholder="e.g. 7.5" step="0.5" min="0" max="24"></div>
+          <div><div class="pi-label" style="margin-bottom:5px">Stress (0–100)</div><input type="number" class="pi-input" id="mStress" placeholder="e.g. 25" min="0" max="100"></div>
+        </div>
+        <button class="pi-btn primary" id="btnManualGarmin">Save</button>
+        <div class="pi-save-msg" id="manualGarminMsg"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ═══════════════════════════════════════════
@@ -386,6 +400,7 @@ input[type=date].pi-input{color-scheme:dark}
         <button class="pi-q-btn" data-q="squat">When will I hit my squat goal?</button>
         <button class="pi-q-btn" data-q="progress">How is my progress?</button>
       </div>
+      <div id="coachKeyNote" style="display:none;font-size:12px;color:var(--text-3);margin-bottom:10px;padding:10px;background:rgba(255,255,255,.04);border-radius:8px;line-height:1.5">Add an Anthropic API key in <a href="setup.html?force" style="color:var(--blue)">⚙ Settings</a> to enable AI-powered answers. Showing data-based analysis for now.</div>
       <div class="pi-coach-answer" id="coachAnswer">Tap a question above to get a personalised answer based on your data.</div>
     </div>
   </div>
@@ -396,12 +411,18 @@ input[type=date].pi-input{color-scheme:dark}
 (function(){
 'use strict';
 
-const SUPA_URL = 'https://mzhplwybcfppobsqwcmm.supabase.co';
-const SUPA_KEY = 'sb_publishable__ZwmxLQdrUIvTa6Y0zhDbw_2IXYke33';
-const LS_KEY   = 'po_coach_v1';
+const LS_KEY = 'po_coach_v1';
+
+if(window.AppConfig) window.AppConfig.requireConfig();
+document.title = 'Intel — ' + (window.AppConfig ? window.AppConfig.getDisplayName() : 'Dashboard');
 
 let _supa = null;
-function db(){ return _supa || (_supa = supabase.createClient(SUPA_URL, SUPA_KEY)); }
+function db(){
+  if(_supa) return _supa;
+  const c = window.AppConfig && window.AppConfig.getSupabase();
+  if(c) _supa = c;
+  return _supa;
+}
 
 // shared state
 let garminToday = null;
@@ -633,18 +654,51 @@ function renderHealthInsight(history){
   el.textContent=txt; el.className='pi-insight'+(cls?' '+cls:''); el.style.display='block';
 }
 
+function applyHealthStats(w){
+  document.getElementById('hHR').textContent    =w&&w.resting_hr!=null?Math.round(w.resting_hr)+' bpm':'—';
+  document.getElementById('hBB').textContent    =w&&w.body_battery!=null?Math.round(w.body_battery):'—';
+  document.getElementById('hSleep').textContent =w&&(w.sleep!=null||w.sleep_hours!=null)?(w.sleep||w.sleep_hours).toFixed(1)+'h':'—';
+  document.getElementById('hStress').textContent=w&&w.stress!=null?Math.round(w.stress):'—';
+}
+
 async function initHealth(){
   const [w]=await Promise.all([fetchGarminToday(),fetchGarminHistory()]);
   if(w) saveGarminToday(w);
-  document.getElementById('hHR').textContent    =w&&w.resting_hr!=null?Math.round(w.resting_hr)+' bpm':'—';
-  document.getElementById('hBB').textContent    =w&&w.body_battery!=null?Math.round(w.body_battery):'—';
-  document.getElementById('hSleep').textContent =w&&w.sleep!=null?w.sleep.toFixed(1)+'h':'—';
-  document.getElementById('hStress').textContent=w&&w.stress!=null?Math.round(w.stress):'—';
+  applyHealthStats(w);
   makeHealthChart('chartHR',   'Resting HR',   garminHistory,'resting_hr',  '#ff8a8a');
   makeHealthChart('chartSleep','Sleep (h)',     garminHistory,'sleep_hours', '#a78bfa');
   makeHealthChart('chartBB',   'Body Battery', garminHistory,'body_battery','#6ee7b7');
   renderBaselines(garminHistory,w);
   renderHealthInsight(garminHistory);
+
+  // Show manual entry if Garmin is unavailable and no entry for today exists
+  const todayHasData = garminHistory.some(d=>d.date===todayStr());
+  if(!w && !todayHasData){
+    document.getElementById('manualGarminWrap').style.display='block';
+  }
+
+  document.getElementById('btnManualGarmin').addEventListener('click',async function(){
+    const hr  = parseFloat(document.getElementById('mHR').value)||null;
+    const bb  = parseFloat(document.getElementById('mBB').value)||null;
+    const sl  = parseFloat(document.getElementById('mSleep').value)||null;
+    const st  = parseFloat(document.getElementById('mStress').value)||null;
+    const row = {date:todayStr(),resting_hr:hr,body_battery:bb,sleep_hours:sl,stress:st};
+    const msg = document.getElementById('manualGarminMsg');
+    try{
+      if(db()) await db().from('garmin_daily').upsert(row,{onConflict:'date'});
+      // update in-memory history and re-render
+      const idx=garminHistory.findIndex(d=>d.date===todayStr());
+      if(idx>=0) garminHistory[idx]=row; else garminHistory.push(row);
+      const synthetic={resting_hr:hr,body_battery:bb,sleep:sl,stress:st};
+      applyHealthStats(synthetic);
+      makeHealthChart('chartHR',   'Resting HR',   garminHistory,'resting_hr',  '#ff8a8a');
+      makeHealthChart('chartSleep','Sleep (h)',     garminHistory,'sleep_hours', '#a78bfa');
+      makeHealthChart('chartBB',   'Body Battery', garminHistory,'body_battery','#6ee7b7');
+      renderBaselines(garminHistory,synthetic);
+      document.getElementById('manualGarminWrap').style.display='none';
+      msg.textContent='Saved ✓';
+    }catch(e){ msg.textContent='Save failed'; }
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -1085,6 +1139,10 @@ async function initCoach(){
   if(fatigueSignals){
     const alert=document.getElementById('fatigueAlert'); alert.classList.add('show');
     document.getElementById('fatigueBody').textContent=fatigueSignals.join(' · ')+'.\n\nRecommendation: Reduce intensity by ~20% and prioritise recovery over the next 2–3 days.';
+  }
+
+  if(window.AppConfig && !window.AppConfig.getAnthropicKey()){
+    document.getElementById('coachKeyNote').style.display='block';
   }
 
   const g=garminToday||{};

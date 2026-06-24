@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0b">
+<title>Setup — Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #0a0a0b;
+  --bg-card: #111113;
+  --text-1: #fff;
+  --text-2: rgba(255,255,255,.6);
+  --text-3: rgba(255,255,255,.4);
+  --text-4: rgba(255,255,255,.22);
+  --border: rgba(255,255,255,.06);
+  --border-s: rgba(255,255,255,.14);
+  --good: #6ee7b7;
+  --warn: #fbbf24;
+  --bad: #ff8a8a;
+  --blue: #60a5fa;
+  --font: -apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Roboto,sans-serif;
+  --mono: ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,#14141a 0%,#0a0a0b 60%);
+  color:var(--text-1);font-family:var(--font);
+  -webkit-font-smoothing:antialiased;min-height:100vh;
+}
+.wrap{max-width:480px;margin:0 auto;padding:max(32px,env(safe-area-inset-top)) 20px max(32px,env(safe-area-inset-bottom))}
+
+/* step indicator */
+.step-indicator{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.1em;
+  color:var(--text-4);text-transform:uppercase;margin-bottom:28px;text-align:center}
+
+/* step panel */
+.step{display:none}
+.step.active{display:block}
+.step-heading{font-size:22px;font-weight:900;margin-bottom:8px;line-height:1.2}
+.step-sub{font-size:14px;color:var(--text-2);line-height:1.6;margin-bottom:24px}
+
+/* card */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
+
+/* inputs */
+.field{margin-bottom:14px}
+.field-label{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--text-3);
+  text-transform:uppercase;margin-bottom:6px}
+input.field-input{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border-s);
+  border-radius:8px;padding:11px 13px;color:var(--text-1);font-family:var(--font);font-size:14px;
+  -webkit-appearance:none;appearance:none;outline:none}
+input.field-input:focus{border-color:rgba(255,255,255,.3)}
+input.field-input::placeholder{color:var(--text-4)}
+
+/* buttons */
+.btn{width:100%;padding:14px;border-radius:10px;border:none;font-family:var(--font);
+  font-size:15px;font-weight:700;cursor:pointer;transition:background .15s;margin-top:4px}
+.btn-primary{background:linear-gradient(135deg,rgba(110,231,183,.18),rgba(96,165,250,.18));
+  border:1px solid rgba(110,231,183,.28);color:var(--good)}
+.btn-secondary{background:rgba(255,255,255,.06);color:var(--text-2)}
+.btn:active{opacity:.8}
+.btn-test{width:auto;padding:9px 18px;font-size:13px;border-radius:8px;
+  background:rgba(255,255,255,.08);border:1px solid var(--border-s);color:var(--text-2);
+  font-family:var(--font);font-weight:700;cursor:pointer;transition:background .15s;margin-top:8px}
+.btn-test:active{background:rgba(255,255,255,.14)}
+
+/* status */
+.status{font-size:13px;margin-top:10px;min-height:20px;font-weight:600}
+.status.ok{color:var(--good)}
+.status.fail{color:var(--bad)}
+
+/* info box */
+.info-box{background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.16);
+  border-radius:10px;padding:14px;font-size:13px;color:var(--text-2);line-height:1.65;margin-bottom:14px}
+.info-box code{font-family:var(--mono);font-size:12px;color:var(--blue);
+  background:rgba(96,165,250,.12);padding:2px 6px;border-radius:4px}
+
+/* helper link */
+.helper-link{font-size:12px;color:var(--blue);text-decoration:none;opacity:.8}
+.helper-link:hover{opacity:1}
+
+/* skip link */
+.skip-link{display:block;text-align:center;margin-top:14px;font-size:13px;
+  color:var(--text-3);cursor:pointer;text-decoration:underline}
+
+/* step dots */
+.dots{display:flex;justify-content:center;gap:8px;margin-bottom:32px}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.12);transition:all .2s}
+.dot.active{background:var(--good);width:20px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="step-indicator" id="stepLabel">STEP 1 OF 4</div>
+  <div class="dots">
+    <div class="dot active" id="dot0"></div>
+    <div class="dot" id="dot1"></div>
+    <div class="dot" id="dot2"></div>
+    <div class="dot" id="dot3"></div>
+  </div>
+
+  <!-- Step 1: Name -->
+  <div class="step active" id="step0">
+    <div class="step-heading">Welcome.</div>
+    <div class="step-sub">This is your personal fitness dashboard. Let's get it set up in under two minutes.</div>
+    <div class="card">
+      <div class="field">
+        <div class="field-label">What should we call you?</div>
+        <input class="field-input" id="inputName" type="text" placeholder="e.g. Alex" autocomplete="given-name">
+      </div>
+    </div>
+    <button class="btn btn-primary" id="btnStep0">Continue →</button>
+  </div>
+
+  <!-- Step 2: Supabase -->
+  <div class="step" id="step1">
+    <div class="step-heading">Connect your database</div>
+    <div class="step-sub">Your data lives in your own free Supabase project. Create one at <a class="helper-link" href="https://supabase.com" target="_blank">supabase.com</a>, then paste your credentials below. These are safe to expose in a browser.</div>
+    <div class="card">
+      <div class="field">
+        <div class="field-label">Supabase Project URL</div>
+        <input class="field-input" id="inputSupaUrl" type="url" placeholder="https://xxxxxxxxxxxx.supabase.co">
+      </div>
+      <div class="field">
+        <div class="field-label">Supabase Anon Key</div>
+        <input class="field-input" id="inputSupaKey" type="text" placeholder="eyJhbGci...">
+      </div>
+      <button class="btn-test" id="btnTestSupa">Test connection</button>
+      <div class="status" id="supaStatus"></div>
+    </div>
+    <div style="margin-bottom:10px">
+      <a class="helper-link" href="https://supabase.com/docs/guides/getting-started" target="_blank">How to find these →</a>
+    </div>
+    <button class="btn btn-primary" id="btnStep1" disabled>Continue →</button>
+  </div>
+
+  <!-- Step 3: Garmin -->
+  <div class="step" id="step2">
+    <div class="step-heading">Sync Garmin data</div>
+    <div class="step-sub">Optional. If you have a Garmin device, connect it to pull resting HR, sleep, Body Battery, stress, and activities automatically.</div>
+    <div class="info-box">
+      Your Garmin credentials must be stored as Vercel environment variables — they never touch the browser.<br><br>
+      In your Vercel project → <strong>Settings → Environment Variables</strong>, add:<br><br>
+      <code>GARMIN_EMAIL</code> = your@email.com<br>
+      <code>GARMIN_PASSWORD</code> = yourpassword<br><br>
+      Then redeploy (takes ~30 seconds). Come back here and tap <strong>Test</strong> to verify.
+    </div>
+    <button class="btn-test" id="btnTestGarmin">Test Garmin sync</button>
+    <div class="status" id="garminStatus"></div>
+    <button class="btn btn-primary" id="btnStep2" style="margin-top:16px">Continue →</button>
+    <span class="skip-link" id="skipGarmin">Skip for now</span>
+  </div>
+
+  <!-- Step 4: Anthropic -->
+  <div class="step" id="step3">
+    <div class="step-heading">Enable AI coach</div>
+    <div class="step-sub">Optional. The Coach tab gives personalised answers based on your data. It uses the Anthropic API — you need your own API key. Get one free at <a class="helper-link" href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>. You do <strong>not</strong> need Claude Pro.</div>
+    <div class="card">
+      <div class="field">
+        <div class="field-label">Anthropic API Key</div>
+        <input class="field-input" id="inputAnthKey" type="text" placeholder="sk-ant-...">
+      </div>
+      <button class="btn-test" id="btnTestAnth">Test key</button>
+      <div class="status" id="anthStatus"></div>
+      <div style="font-size:12px;color:var(--text-4);margin-top:10px;line-height:1.5">
+        Your key is stored only in your browser. It is never sent to any server except Anthropic.
+      </div>
+    </div>
+    <button class="btn btn-primary" id="btnStep3">Go to dashboard →</button>
+    <span class="skip-link" id="skipAnth">Skip — I'll add this later</span>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var current = 0;
+var supaVerified = false;
+
+function goTo(n){
+  document.getElementById('step'+current).classList.remove('active');
+  current = n;
+  document.getElementById('step'+current).classList.add('active');
+  document.getElementById('stepLabel').textContent = 'STEP '+(n+1)+' OF 4';
+  for(var i=0;i<4;i++){
+    var d=document.getElementById('dot'+i);
+    d.classList.toggle('active', i===n);
+  }
+  window.scrollTo(0,0);
+}
+
+// ── Step 0: Name ──────────────────────────────────────────────────
+document.getElementById('btnStep0').addEventListener('click',function(){
+  var name = document.getElementById('inputName').value.trim();
+  if(name) localStorage.setItem('user_display_name', name);
+  goTo(1);
+});
+document.getElementById('inputName').addEventListener('keydown',function(e){
+  if(e.key==='Enter') document.getElementById('btnStep0').click();
+});
+
+// Pre-fill if already set
+var savedName = localStorage.getItem('user_display_name');
+if(savedName) document.getElementById('inputName').value = savedName;
+
+// ── Step 1: Supabase ───────────────────────────────────────────────
+var savedUrl = localStorage.getItem('user_supabase_url');
+var savedKey = localStorage.getItem('user_supabase_key');
+if(savedUrl) document.getElementById('inputSupaUrl').value = savedUrl;
+if(savedKey) document.getElementById('inputSupaKey').value = savedKey;
+if(savedUrl && savedKey){ supaVerified=true; document.getElementById('btnStep1').disabled=false; }
+
+document.getElementById('btnTestSupa').addEventListener('click',async function(){
+  var url = document.getElementById('inputSupaUrl').value.trim();
+  var key = document.getElementById('inputSupaKey').value.trim();
+  var el = document.getElementById('supaStatus');
+  if(!url || !key){ el.className='status fail'; el.textContent='Enter both fields first.'; return; }
+  el.className='status'; el.textContent='Testing...';
+  try{
+    var client = window.supabase.createClient(url, key);
+    var {error} = await client.from('readiness').select('count').limit(1);
+    if(error && error.code !== 'PGRST116' && error.code !== '42P01'){
+      // PGRST116 = no rows, 42P01 = table doesn't exist yet — both mean connection works
+      throw error;
+    }
+    el.className='status ok'; el.textContent='✓ Connected';
+    localStorage.setItem('user_supabase_url', url);
+    localStorage.setItem('user_supabase_key', key);
+    supaVerified = true;
+    document.getElementById('btnStep1').disabled = false;
+  }catch(e){
+    el.className='status fail'; el.textContent='✗ Failed — check your credentials';
+  }
+});
+
+document.getElementById('btnStep1').addEventListener('click',function(){
+  var url = document.getElementById('inputSupaUrl').value.trim();
+  var key = document.getElementById('inputSupaKey').value.trim();
+  if(url && key){
+    localStorage.setItem('user_supabase_url', url);
+    localStorage.setItem('user_supabase_key', key);
+  }
+  goTo(2);
+});
+
+// ── Step 2: Garmin ─────────────────────────────────────────────────
+document.getElementById('btnTestGarmin').addEventListener('click',async function(){
+  var el = document.getElementById('garminStatus');
+  el.className='status'; el.textContent='Testing...';
+  try{
+    var r = await fetch('/api/garmin');
+    if(!r.ok) throw new Error('status '+r.status);
+    var d = await r.json();
+    if(d._error) throw new Error(d._error);
+    el.className='status ok'; el.textContent='✓ Garmin connected';
+  }catch(e){
+    el.className='status fail'; el.textContent='✗ Not connected — check environment variables or skip for now';
+  }
+});
+
+document.getElementById('btnStep2').addEventListener('click',function(){ goTo(3); });
+document.getElementById('skipGarmin').addEventListener('click',function(){ goTo(3); });
+
+// ── Step 3: Anthropic ──────────────────────────────────────────────
+var savedAnthKey = localStorage.getItem('user_anthropic_key');
+if(savedAnthKey) document.getElementById('inputAnthKey').value = savedAnthKey;
+
+document.getElementById('btnTestAnth').addEventListener('click',async function(){
+  var key = document.getElementById('inputAnthKey').value.trim();
+  var el = document.getElementById('anthStatus');
+  if(!key){ el.className='status fail'; el.textContent='Enter a key first.'; return; }
+  el.className='status'; el.textContent='Testing...';
+  try{
+    var r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 10,
+        messages:[{role:'user',content:'Reply with: ok'}]
+      })
+    });
+    if(!r.ok) throw new Error('status '+r.status);
+    localStorage.setItem('user_anthropic_key', key);
+    el.className='status ok'; el.textContent='✓ Working';
+  }catch(e){
+    el.className='status fail'; el.textContent='✗ Invalid key';
+  }
+});
+
+function finish(){
+  var key = document.getElementById('inputAnthKey').value.trim();
+  if(key) localStorage.setItem('user_anthropic_key', key);
+  localStorage.setItem('setup_completed', '1');
+  window.location.href = 'index.html';
+}
+document.getElementById('btnStep3').addEventListener('click', finish);
+document.getElementById('skipAnth').addEventListener('click', function(){
+  localStorage.setItem('setup_completed', '1');
+  window.location.href = 'index.html';
+});
+
+// If ?force param, start from step 0 regardless
+// Otherwise, if already configured, jump to step that needs attention
+var params = new URLSearchParams(window.location.search);
+if(!params.has('force')){
+  var url = localStorage.getItem('user_supabase_url');
+  var key = localStorage.getItem('user_supabase_key');
+  if(url && key){
+    // Already configured — still start from 0 so user can update anything
+  }
+}
+
+})();
+</script>
+</body>
+</html>

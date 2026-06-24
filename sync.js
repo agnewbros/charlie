@@ -5,17 +5,15 @@
 // =============================================================
 (function () {
   'use strict';
-  const SUPABASE_URL = 'https://mzhplwybcfppobsqwcmm.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable__ZwmxLQdrUIvTa6Y0zhDbw_2IXYke33';
-
   window.initCloudSync = function (config) {
     const appKey = config && config.appKey;
     const syncedKeys = (config && config.syncedKeys) || [];
     const syncedPrefixes = (config && config.syncedPrefixes) || [];
     const onApplied = config && config.onApplied;
     if (!appKey || !window.supabase) return;
+    const SUPABASE_URL = (window.AppConfig && localStorage.getItem('user_supabase_url')) || '';
+    const SUPABASE_KEY = (window.AppConfig && localStorage.getItem('user_supabase_key')) || '';
     if (!SUPABASE_URL || !SUPABASE_KEY) return;
-    if (SUPABASE_URL.indexOf('PASTE-') === 0 || SUPABASE_KEY.indexOf('PASTE-') === 0) return;
 
     let supa = null, pushTimer = null, suppressSync = false, lastSyncedJson = null;
 

@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#050506">
 <title>Charlie's Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="credentials.js"></script>
 <script src="sync.js" defer></script>
 <script src="topbar.js" defer></script>
 <style>
@@ -1310,6 +1311,7 @@ body::after {
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+  if (window.AppConfig) window.AppConfig.requireConfig();
   if (typeof initCloudSync !== 'function') return;
   initCloudSync({
     appKey: 'goals',

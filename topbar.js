@@ -10,9 +10,9 @@
 (function () {
   'use strict';
 
-  // -------- Supabase config (same project as the rest of the dashboard) --------
-  const TOPBAR_SUPABASE_URL = 'https://mzhplwybcfppobsqwcmm.supabase.co';
-  const TOPBAR_SUPABASE_KEY = 'sb_publishable__ZwmxLQdrUIvTa6Y0zhDbw_2IXYke33';
+  function topbarSupaClient(){
+    return window.AppConfig ? window.AppConfig.getSupabase() : null;
+  }
 
   // -------- CSS --------
   const css = `
@@ -160,6 +160,9 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   <a href="finance.html" class="topbar-finance-btn" id="topbarFinance" aria-label="Finance">
     <span class="topbar-finance-icon">📊</span>
   </a>
+  <a href="setup.html?force" class="topbar-finance-btn" aria-label="Settings">
+    <span class="topbar-finance-icon" style="font-size:17px;opacity:.6">⚙️</span>
+  </a>
 </header>`;
 
   const bottombarHtml = `
@@ -278,10 +281,9 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   async function pushWaterMergedToSupabase(localWater) {
     if (window.location.pathname.endsWith('/health.html') ||
         window.location.pathname.endsWith('health.html')) return;
-    if (!window.supabase || !TOPBAR_SUPABASE_URL || !TOPBAR_SUPABASE_KEY) return;
-    if (TOPBAR_SUPABASE_URL.indexOf('PASTE-') === 0) return;
+    const supa = topbarSupaClient();
+    if (!supa) return;
     try {
-      const supa = window.supabase.createClient(TOPBAR_SUPABASE_URL, TOPBAR_SUPABASE_KEY);
       const { data } = await supa
         .from('app_state').select('data').eq('key', 'health').maybeSingle();
       const current = (data && data.data) || {};
