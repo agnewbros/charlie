@@ -316,6 +316,20 @@ img, video, canvas, svg { max-width: 100%; }
 .prog-switch-name { font-size: 14px; font-weight: 700; color: var(--text-1); }
 .prog-switch-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; font-family: var(--font-mono); }
 .prog-switch-check { color: var(--good); font-size: 18px; margin-left: 10px; }
+.prog-switch-edit {
+  background: transparent; border: none; color: var(--text-4);
+  font-size: 15px; cursor: pointer; padding: 4px 8px; flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.prog-switch-edit:hover { color: var(--text-2); }
+.prog-switch-rename-input {
+  flex: 1; min-width: 0;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 8px; color: var(--text-1);
+  font-family: inherit; font-size: 14px; font-weight: 700;
+  padding: 6px 10px; outline: none;
+}
 .prog-section-label {
   font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--text-3);
@@ -3048,23 +3062,60 @@ img, video, canvas, svg { max-width: 100%; }
   function renderProgSwitchList() {
     const progs = loadPrograms(); if (!progs) return;
     const list = $('progSwitchList');
-    list.innerHTML = Object.values(progs.programs).map(pg => {
+    list.innerHTML = '';
+    Object.values(progs.programs).forEach(pg => {
       const isActive = pg.id === progs.activeId;
       const exCount = (pg.exercises || []).length;
       const date = pg.createdAt || '';
-      return '<div class="prog-switch-row' + (isActive ? ' is-active' : '') + '" data-id="' + pg.id + '">'
-        + '<div class="prog-switch-info">'
-        +   '<div class="prog-switch-name">' + escape(pg.name) + '</div>'
+
+      const row = document.createElement('div');
+      row.className = 'prog-switch-row' + (isActive ? ' is-active' : '');
+      row.dataset.id = pg.id;
+      row.innerHTML =
+        '<div class="prog-switch-info" style="min-width:0;flex:1">'
+        +   '<div class="prog-switch-name" data-namedisp>' + escape(pg.name) + '</div>'
         +   '<div class="prog-switch-meta">' + (date ? date + ' · ' : '') + exCount + ' exercises</div>'
         + '</div>'
-        + (isActive ? '<span class="prog-switch-check">✓</span>' : '')
-        + '</div>';
-    }).join('');
-    list.querySelectorAll('.prog-switch-row').forEach(row => {
-      row.addEventListener('click', () => {
-        const id = row.dataset.id;
+        + '<button type="button" class="prog-switch-edit" title="Rename" data-editbtn>✎</button>'
+        + (isActive ? '<span class="prog-switch-check">✓</span>' : '');
+      list.appendChild(row);
+
+      // Switch on row click (not on edit button click)
+      row.addEventListener('click', e => {
+        if (e.target.closest('[data-editbtn]') || e.target.closest('.prog-switch-rename-input')) return;
         $('progSwitchBg').classList.remove('show');
-        if (id !== progs.activeId) reinitForProgram(id);
+        if (pg.id !== progs.activeId) reinitForProgram(pg.id);
+      });
+
+      // Inline rename
+      row.querySelector('[data-editbtn]').addEventListener('click', e => {
+        e.stopPropagation();
+        const nameEl = row.querySelector('[data-namedisp]');
+        const editBtn = row.querySelector('[data-editbtn]');
+        const inp = document.createElement('input');
+        inp.className = 'prog-switch-rename-input';
+        inp.value = pg.name;
+        inp.maxLength = 60;
+        nameEl.replaceWith(inp);
+        editBtn.style.display = 'none';
+        inp.focus(); inp.select();
+
+        function saveRename() {
+          const newName = inp.value.trim() || pg.name;
+          const _p = loadPrograms(); if (!_p) return;
+          const _pg = _p.programs[pg.id]; if (!_pg) return;
+          _pg.name = newName;
+          _lastSyncedProgJson = null;
+          savePrograms(_p);
+          renderProgBar();
+          // Restore display — re-render whole list to reflect change
+          renderProgSwitchList();
+        }
+        inp.addEventListener('blur', saveRename);
+        inp.addEventListener('keydown', e => {
+          if (e.key === 'Enter') { inp.blur(); }
+          if (e.key === 'Escape') { inp.value = pg.name; inp.blur(); }
+        });
       });
     });
   }
