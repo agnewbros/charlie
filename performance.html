@@ -264,42 +264,37 @@ input[type=date].pi-input{color-scheme:dark}
   </div>
 
   <!-- ═══════════════════════════════════════════
-       READINESS
+       WELLNESS
   ════════════════════════════════════════════ -->
   <div id="tab-readiness" style="display:none">
-    <div id="rdScoreCard" class="pi-card" style="display:none">
-      <div class="pi-card-title">Today's Wellness</div>
-      <div class="pi-score-wrap">
-        <div class="pi-score-num" id="rdScoreNum">—</div>
-        <div class="pi-score-sub">/ 100</div>
-      </div>
-      <div id="rdRec" class="pi-insight"></div>
-      <button class="pi-btn" id="btnEditReadiness" style="margin-top:12px;width:100%">Edit</button>
-    </div>
     <div id="rdForm" class="pi-card">
-      <div class="pi-card-title">How Are You Feeling?</div>
+      <div class="pi-card-title">Wellness Check-In</div>
       <div class="pi-form-row"><div class="pi-label">Energy<span class="pi-label-val" id="vEnergy">3</span></div><input type="range" class="pi-range" id="rEnergy" min="1" max="5" value="3"></div>
-      <div class="pi-form-row"><div class="pi-label">Muscle Soreness<span class="pi-label-val" id="vSoreness">3</span></div><input type="range" class="pi-range" id="rSoreness" min="1" max="5" value="3"></div>
       <div class="pi-form-row"><div class="pi-label">Motivation<span class="pi-label-val" id="vMotivation">3</span></div><input type="range" class="pi-range" id="rMotivation" min="1" max="5" value="3"></div>
       <div class="pi-form-row"><div class="pi-label">Mood<span class="pi-label-val" id="vMood">3</span></div><input type="range" class="pi-range" id="rMood" min="1" max="5" value="3"></div>
-      <div class="pi-form-row"><div class="pi-label">Stress Level<span class="pi-label-val" id="vStress">3</span></div><input type="range" class="pi-range" id="rStress" min="1" max="5" value="3"></div>
-      <div class="pi-form-row"><div class="pi-label">Joint Pain<span class="pi-label-val" id="vJoint">1</span></div><input type="range" class="pi-range" id="rJoint" min="1" max="5" value="1"></div>
       <div class="pi-form-row"><div class="pi-label">Sleep Quality<span class="pi-label-val" id="vSleepQ">3</span></div><input type="range" class="pi-range" id="rSleepQ" min="1" max="5" value="3"></div>
-      <div class="pi-div">Quick Questions</div>
-      <div class="pi-form-row">
-        <div class="pi-label" style="margin-bottom:8px">Ready for a hard workout?</div>
-        <div class="pi-toggle-row"><button class="pi-toggle-btn active" id="rdyYes">Yes</button><button class="pi-toggle-btn" id="rdyNo">No</button></div>
+      <div class="pi-form-row"><div class="pi-label">Muscle Soreness<span class="pi-label-val" id="vSoreness">3</span></div><input type="range" class="pi-range" id="rSoreness" min="1" max="5" value="3"></div>
+      <div class="pi-form-row"><div class="pi-label">Stress<span class="pi-label-val" id="vStress">3</span></div><input type="range" class="pi-range" id="rStress" min="1" max="5" value="3"></div>
+      <div class="pi-form-row"><div class="pi-label">Joint Pain<span class="pi-label-val" id="vJoint">1</span></div><input type="range" class="pi-range" id="rJoint" min="1" max="5" value="1"></div>
+      <button class="pi-btn primary" id="btnReadiness" style="margin-top:8px">Log Wellness</button>
+    </div>
+    <div id="rdLogged" class="pi-card" style="display:none;text-align:center">
+      <div style="font-size:13px;color:var(--text-2);padding:4px 0 10px">Wellness logged for today</div>
+      <button class="pi-btn" id="btnEditReadiness" style="width:100%">Edit</button>
+    </div>
+    <div id="rdCharts" style="display:none">
+      <div class="pi-card">
+        <div class="pi-card-title">Energy & Motivation</div>
+        <div class="pi-chart-wrap"><canvas id="chartWellEnergy"></canvas></div>
       </div>
-      <div class="pi-form-row">
-        <div class="pi-label" style="margin-bottom:7px">Any injuries or pain?</div>
-        <textarea class="pi-textarea" id="rdInjuries" placeholder="None"></textarea>
+      <div class="pi-card">
+        <div class="pi-card-title">Mood & Sleep Quality</div>
+        <div class="pi-chart-wrap"><canvas id="chartWellMood"></canvas></div>
       </div>
-      <div id="rdLiveWrap" style="display:none;text-align:center;padding:12px 0 4px">
-        <div id="rdLiveNum" style="font-size:48px;font-weight:900;line-height:1">—</div>
-        <div style="font-size:11px;color:var(--text-4);letter-spacing:.08em;font-weight:700;margin-top:2px">WELLNESS SCORE / 100</div>
-        <div id="rdLiveRec" style="font-size:13px;color:var(--text-2);margin-top:6px"></div>
+      <div class="pi-card">
+        <div class="pi-card-title">Soreness & Stress</div>
+        <div class="pi-chart-wrap"><canvas id="chartWellStress"></canvas></div>
       </div>
-      <button class="pi-btn primary" id="btnReadiness">Save Score</button>
     </div>
   </div>
 
@@ -850,72 +845,51 @@ const SLIDERS=[
   ['rStress','vStress','stress'],['rJoint','vJoint','joint_pain'],['rSleepQ','vSleepQ','sleep_quality']
 ];
 
-function scoreClass(s){ return s>=70?'high':s>=45?'medium':'low'; }
-function readinessRec(s){
-  if(s>=70) return {txt:'Feeling good — energy and recovery metrics are strong.',cls:''};
-  if(s>=45) return {txt:'Feeling balanced — some areas to keep an eye on.',cls:'warn'};
-  return {txt:'Feeling run down — worth prioritising rest and recovery today.',cls:'bad'};
+let _wellCharts={};
+function makeWellChart(id,datasets){
+  if(_wellCharts[id]){ _wellCharts[id].destroy(); }
+  const ctx=document.getElementById(id); if(!ctx) return;
+  _wellCharts[id]=new Chart(ctx,{
+    type:'line',
+    data:{datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{color:'rgba(255,255,255,.5)',boxWidth:10,font:{size:10}}}},
+      scales:{
+        x:{type:'category',ticks:{color:'rgba(255,255,255,.3)',maxTicksLimit:6,font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{min:1,max:5,ticks:{color:'rgba(255,255,255,.3)',stepSize:1,font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}}
+      }
+    }
+  });
 }
 
-let _lastReadinessVals=null;
-
-function showReadinessScore(score,savedVals){
-  const num=document.getElementById('rdScoreNum');
-  num.textContent=score; num.className='pi-score-num '+scoreClass(score);
-  const rec=readinessRec(score);
-  const recEl=document.getElementById('rdRec');
-  recEl.textContent=rec.txt; recEl.className='pi-insight'+(rec.cls?' '+rec.cls:'');
-  document.getElementById('rdScoreCard').style.display='block';
-  document.getElementById('rdForm').style.display='none';
-  if(savedVals) _lastReadinessVals=savedVals;
-}
-
-function calcScore(vals,g){
-  const pos=['energy','motivation','mood','sleep_quality'];
-  const neg=['muscle_soreness','stress','joint_pain'];
-  let sub=0;
-  pos.forEach(k=>{ sub+=(vals[k]-1)/4; });
-  neg.forEach(k=>{ sub+=(5-vals[k])/4; });
-  sub/=7;
-  if(!vals.feels_ready) sub*=0.85;
-
-  let gar=0.5,gw=0;
-  const gh=garminHistory;
-  const g30hr=gh.length>=7?avg(gh.slice(-30).filter(d=>d.resting_hr).map(d=>d.resting_hr)):0;
-  if(g&&g.sleep!=null){ gar+=(Math.min(g.sleep,9)-5)/4*0.25; gw+=0.25; }
-  if(g&&g.body_battery!=null){ gar+=g.body_battery/100*0.15; gw+=0.15; }
-  if(g&&g.stress!=null){ gar+=(1-g.stress/100)*0.10; gw+=0.10; }
-  if(g&&g.resting_hr!=null&&g30hr>0){ const hf=Math.max(0,Math.min(1,1-(g.resting_hr-g30hr*0.9)/(g30hr*0.3))); gar+=hf*0.15; gw+=0.15; }
-  if(gw>0) gar=gar/(0.5+gw)*gw+0.5*(1-gw);
-
-  // if no garmin data available, score is purely subjective
-  if(gw===0) return Math.max(5,Math.min(100,Math.round(sub*100)));
-  return Math.max(5,Math.min(100,Math.round(sub*0.25+gar*0.75)*100/100));
+async function renderWellnessCharts(){
+  try{
+    const {data}=await db().from('readiness').select('date,energy,motivation,mood,sleep_quality,muscle_soreness,stress,joint_pain').order('date',{ascending:true}).limit(60);
+    if(!data||data.length<2){ return; }
+    document.getElementById('rdCharts').style.display='block';
+    const labels=data.map(d=>dlbl(d.date));
+    const ds=(field,label,color)=>({label,data:data.map((d,i)=>({x:labels[i],y:d[field]})),borderColor:color,backgroundColor:color+'22',tension:.35,fill:false,pointRadius:2});
+    makeWellChart('chartWellEnergy',[ds('energy','Energy','#6ee7b7'),ds('motivation','Motivation','#60a5fa')]);
+    makeWellChart('chartWellMood',[ds('mood','Mood','#c084fc'),ds('sleep_quality','Sleep Quality','#38bdf8')]);
+    makeWellChart('chartWellStress',[ds('muscle_soreness','Soreness','#f97316'),ds('stress','Stress','#f43f5e')]);
+  }catch(e){}
 }
 
 async function initReadiness(){
-  let feelsReady=true;
-
-  function updateLiveScore(){
-    const vals={feels_ready:feelsReady};
-    SLIDERS.forEach(function([sid,,key]){ const el=document.getElementById(sid.trim()); if(el) vals[key]=parseInt(el.value); });
-    const score=calcScore(vals,garminToday);
-    const numEl=document.getElementById('rdLiveNum');
-    numEl.textContent=score; numEl.className='pi-score-num '+scoreClass(score);
-    const rec=readinessRec(score);
-    document.getElementById('rdLiveRec').textContent=rec.txt;
-    document.getElementById('rdLiveWrap').style.display='block';
-  }
-
   // wire sliders
   SLIDERS.forEach(function([sid,vid]){
     const el=document.getElementById(sid.trim()); if(!el) return;
     const vel=document.getElementById(vid); if(!vel) return;
-    el.addEventListener('input',()=>{ vel.textContent=el.value; updateLiveScore(); });
+    el.addEventListener('input',()=>{ vel.textContent=el.value; });
   });
 
-  document.getElementById('rdyYes').addEventListener('click',function(){ feelsReady=true; this.classList.add('active'); document.getElementById('rdyNo').classList.remove('active'); updateLiveScore(); });
-  document.getElementById('rdyNo').addEventListener('click',function(){ feelsReady=false; this.classList.add('active'); document.getElementById('rdyYes').classList.remove('active'); updateLiveScore(); });
+  function showLogged(savedData){
+    document.getElementById('rdForm').style.display='none';
+    document.getElementById('rdLogged').style.display='block';
+    renderWellnessCharts();
+    return savedData;
+  }
 
   function prefillForm(data){
     SLIDERS.forEach(function([sid,vid,key]){
@@ -924,45 +898,30 @@ async function initReadiness(){
       el.value=data[key];
       const vel=document.getElementById(vid); if(vel) vel.textContent=data[key];
     });
-    if(data.feels_ready!=null){
-      feelsReady=data.feels_ready;
-      document.getElementById('rdyYes').classList.toggle('active',!!data.feels_ready);
-      document.getElementById('rdyNo').classList.toggle('active',!data.feels_ready);
-    }
-    if(data.injuries!=null) document.getElementById('rdInjuries').value=data.injuries;
   }
 
   document.getElementById('btnReadiness').addEventListener('click',async function(){
-    const vals={feels_ready:feelsReady,injuries:document.getElementById('rdInjuries').value};
+    const vals={};
     SLIDERS.forEach(function([sid,,key]){ const el=document.getElementById(sid.trim()); if(el) vals[key]=parseInt(el.value); });
-    await fetchGarminToday();
-    await fetchGarminHistory();
-    const score=calcScore(vals,garminToday);
     try{
-      await db().from('readiness').upsert({date:todayStr(),...vals,readiness_score:score},{onConflict:'date'});
+      await db().from('readiness').upsert({date:todayStr(),...vals},{onConflict:'date'});
     }catch(e){}
-    showReadinessScore(score,{...vals,readiness_score:score});
+    showLogged(vals);
   });
 
   document.getElementById('btnEditReadiness').addEventListener('click',async function(){
-    try{ await db().from('readiness').delete().eq('date',todayStr()); }catch(e){}
-    document.getElementById('rdScoreCard').style.display='none';
+    let saved=null;
+    try{ const {data}=await db().from('readiness').select('*').eq('date',todayStr()).maybeSingle(); saved=data; }catch(e){}
+    document.getElementById('rdLogged').style.display='none';
     document.getElementById('rdForm').style.display='block';
-    if(_lastReadinessVals) prefillForm(_lastReadinessVals);
-    updateLiveScore();
+    if(saved) prefillForm(saved);
   });
 
-  // pre-fetch Garmin data so live score is accurate immediately
-  fetchGarminToday().catch(()=>{});
-  fetchGarminHistory().catch(()=>{});
-
-  // check if already done today — must come after all listeners are wired
+  // check if already logged today
   try{
     const {data}=await db().from('readiness').select('*').eq('date',todayStr()).maybeSingle();
-    if(data){ showReadinessScore(data.readiness_score, data); return; }
+    if(data){ showLogged(data); return; }
   }catch(e){}
-
-  updateLiveScore();
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -1129,14 +1088,13 @@ async function initCoach(){
   }
 
   const g=garminToday||{};
-  const score=readinessData?readinessData.readiness_score:null;
+  const score=null;
   const state=loadWS();
 
   function answer(q){
     switch(q){
       case 'train':{
         const lines=[];
-        if(score!=null) lines.push('Wellness score: '+score+'/100.');
         if(g.sleep!=null) lines.push('Sleep last night: '+g.sleep.toFixed(1)+'h.');
         if(g.body_battery!=null) lines.push('Body battery: '+Math.round(g.body_battery)+'.');
         if(g.resting_hr!=null) lines.push('Resting HR: '+Math.round(g.resting_hr)+' bpm.');
