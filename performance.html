@@ -274,6 +274,7 @@ input[type=date].pi-input{color-scheme:dark}
         <div class="pi-score-sub">/ 100</div>
       </div>
       <div id="rdRec" class="pi-insight"></div>
+      <button class="pi-btn" id="btnEditReadiness" style="margin-top:12px;width:100%">Edit</button>
     </div>
     <div id="rdForm" class="pi-card">
       <div class="pi-card-title">How Are You Feeling?</div>
@@ -851,7 +852,9 @@ function readinessRec(s){
   return {txt:'Low readiness — consider a recovery session, reduced volume, or full rest day. Pushing hard today risks regression.',cls:'bad'};
 }
 
-function showReadinessScore(score){
+let _lastReadinessVals=null;
+
+function showReadinessScore(score,savedVals){
   const num=document.getElementById('rdScoreNum');
   num.textContent=score; num.className='pi-score-num '+scoreClass(score);
   const rec=readinessRec(score);
@@ -859,6 +862,7 @@ function showReadinessScore(score){
   recEl.textContent=rec.txt; recEl.className='pi-insight'+(rec.cls?' '+rec.cls:'');
   document.getElementById('rdScoreCard').style.display='block';
   document.getElementById('rdForm').style.display='none';
+  if(savedVals) _lastReadinessVals=savedVals;
 }
 
 function calcScore(vals,g){
@@ -894,10 +898,25 @@ async function initReadiness(){
   document.getElementById('rdyYes').addEventListener('click',function(){ feelsReady=true; this.classList.add('active'); document.getElementById('rdyNo').classList.remove('active'); });
   document.getElementById('rdyNo').addEventListener('click',function(){ feelsReady=false; this.classList.add('active'); document.getElementById('rdyYes').classList.remove('active'); });
 
+  function prefillForm(data){
+    SLIDERS.forEach(function([sid,vid,key]){
+      if(data[key]==null) return;
+      const el=document.getElementById(sid.trim()); if(!el) return;
+      el.value=data[key];
+      const vel=document.getElementById(vid); if(vel) vel.textContent=data[key];
+    });
+    if(data.feels_ready!=null){
+      feelsReady=data.feels_ready;
+      document.getElementById('rdyYes').classList.toggle('active',!!data.feels_ready);
+      document.getElementById('rdyNo').classList.toggle('active',!data.feels_ready);
+    }
+    if(data.injuries!=null) document.getElementById('rdInjuries').value=data.injuries;
+  }
+
   // check if already done today
   try{
-    const {data}=await db().from('readiness').select('readiness_score').eq('date',todayStr()).maybeSingle();
-    if(data) { showReadinessScore(data.readiness_score); return; }
+    const {data}=await db().from('readiness').select('*').eq('date',todayStr()).maybeSingle();
+    if(data) { showReadinessScore(data.readiness_score, data); return; }
   }catch(e){}
 
   document.getElementById('btnReadiness').addEventListener('click',async function(){
@@ -909,7 +928,14 @@ async function initReadiness(){
     try{
       await db().from('readiness').upsert({date:todayStr(),...vals,readiness_score:score},{onConflict:'date'});
     }catch(e){}
-    showReadinessScore(score);
+    showReadinessScore(score,{...vals,readiness_score:score});
+  });
+
+  document.getElementById('btnEditReadiness').addEventListener('click',async function(){
+    try{ await db().from('readiness').delete().eq('date',todayStr()); }catch(e){}
+    document.getElementById('rdScoreCard').style.display='none';
+    document.getElementById('rdForm').style.display='block';
+    if(_lastReadinessVals) prefillForm(_lastReadinessVals);
   });
 }
 
