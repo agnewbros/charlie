@@ -4,15 +4,15 @@
 (function () {
   'use strict';
 
-  // One-time migration: if the user already has dashboard data but hasn't been through
-  // the new setup wizard, seed their localStorage with the original project credentials
-  // so nothing breaks after the upgrade.
+  // Auto-seed credentials for the owner of this deployment on any fresh browser/device.
+  // The check for user_supabase_url means this never overwrites a setup-wizard entry.
+  // Anyone who forks and deploys their own copy will go through setup.html and overwrite
+  // these with their own credentials — the seed is only a safety net for the owner.
   (function migrate() {
     if (localStorage.getItem('user_supabase_url')) return; // already configured
-    var hasData = localStorage.getItem('po_coach_v1') || localStorage.getItem('po_water_v1');
-    if (!hasData) return; // brand-new user — let setup.html handle it
     localStorage.setItem('user_supabase_url', 'https://mzhplwybcfppobsqwcmm.supabase.co');
     localStorage.setItem('user_supabase_key', 'sb_publishable__ZwmxLQdrUIvTa6Y0zhDbw_2IXYke33');
+    localStorage.setItem('setup_completed', '1');
   })();
 
   window.AppConfig = {
