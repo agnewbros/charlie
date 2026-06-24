@@ -294,7 +294,12 @@ input[type=date].pi-input{color-scheme:dark}
         <div class="pi-label" style="margin-bottom:7px">Any injuries or pain?</div>
         <textarea class="pi-textarea" id="rdInjuries" placeholder="None"></textarea>
       </div>
-      <button class="pi-btn primary" id="btnReadiness">Calculate My Readiness Score</button>
+      <div id="rdLiveWrap" style="display:none;text-align:center;padding:12px 0 4px">
+        <div id="rdLiveNum" style="font-size:48px;font-weight:900;line-height:1">—</div>
+        <div style="font-size:11px;color:var(--text-4);letter-spacing:.08em;font-weight:700;margin-top:2px">ESTIMATED SCORE / 100</div>
+        <div id="rdLiveRec" style="font-size:13px;color:var(--text-2);margin-top:6px"></div>
+      </div>
+      <button class="pi-btn primary" id="btnReadiness">Save Score</button>
     </div>
   </div>
 
@@ -889,15 +894,26 @@ function calcScore(vals,g){
 async function initReadiness(){
   let feelsReady=true;
 
+  function updateLiveScore(){
+    const vals={feels_ready:feelsReady};
+    SLIDERS.forEach(function([sid,,key]){ const el=document.getElementById(sid.trim()); if(el) vals[key]=parseInt(el.value); });
+    const score=calcScore(vals,garminToday);
+    const numEl=document.getElementById('rdLiveNum');
+    numEl.textContent=score; numEl.className='pi-score-num '+scoreClass(score);
+    const rec=readinessRec(score);
+    document.getElementById('rdLiveRec').textContent=rec.txt;
+    document.getElementById('rdLiveWrap').style.display='block';
+  }
+
   // wire sliders
   SLIDERS.forEach(function([sid,vid]){
     const el=document.getElementById(sid.trim()); if(!el) return;
     const vel=document.getElementById(vid); if(!vel) return;
-    el.addEventListener('input',()=>{ vel.textContent=el.value; });
+    el.addEventListener('input',()=>{ vel.textContent=el.value; updateLiveScore(); });
   });
 
-  document.getElementById('rdyYes').addEventListener('click',function(){ feelsReady=true; this.classList.add('active'); document.getElementById('rdyNo').classList.remove('active'); });
-  document.getElementById('rdyNo').addEventListener('click',function(){ feelsReady=false; this.classList.add('active'); document.getElementById('rdyYes').classList.remove('active'); });
+  document.getElementById('rdyYes').addEventListener('click',function(){ feelsReady=true; this.classList.add('active'); document.getElementById('rdyNo').classList.remove('active'); updateLiveScore(); });
+  document.getElementById('rdyNo').addEventListener('click',function(){ feelsReady=false; this.classList.add('active'); document.getElementById('rdyYes').classList.remove('active'); updateLiveScore(); });
 
   function prefillForm(data){
     SLIDERS.forEach(function([sid,vid,key]){
@@ -931,13 +947,20 @@ async function initReadiness(){
     document.getElementById('rdScoreCard').style.display='none';
     document.getElementById('rdForm').style.display='block';
     if(_lastReadinessVals) prefillForm(_lastReadinessVals);
+    updateLiveScore();
   });
+
+  // pre-fetch Garmin data so live score is accurate immediately
+  fetchGarminToday().catch(()=>{});
+  fetchGarminHistory().catch(()=>{});
 
   // check if already done today — must come after all listeners are wired
   try{
     const {data}=await db().from('readiness').select('*').eq('date',todayStr()).maybeSingle();
     if(data){ showReadinessScore(data.readiness_score, data); return; }
   }catch(e){}
+
+  updateLiveScore();
 }
 
 // ─────────────────────────────────────────────────────────────────
