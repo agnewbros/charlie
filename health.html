@@ -1038,6 +1038,7 @@ main {
 })();
 </script>
 <script>
+if (window.AppConfig) window.AppConfig.requireAuth();
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof initCloudSync !== 'function') return;
   initCloudSync({

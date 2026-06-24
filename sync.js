@@ -1,7 +1,5 @@
 // =============================================================
 // Shared cloud-sync helper. Each page calls initCloudSync({...}).
-// Replace the two placeholders with your Supabase project URL +
-// publishable key (same ones you used in topbar.js/gym.html).
 // =============================================================
 (function () {
   'use strict';
@@ -16,6 +14,7 @@
     if (!SUPABASE_URL || !SUPABASE_KEY) return;
 
     let supa = null, pushTimer = null, suppressSync = false, lastSyncedJson = null;
+    let _uid = null, _token = null; // cached from auth session
 
     function matches(k) {
       if (!k) return false;
@@ -71,33 +70,34 @@
       return changed;
     }
     async function pushNow() {
-      if (!supa) return;
+      if (!supa || !_uid) return;
       const state = collect();
       const json = JSON.stringify(state);
       if (json === lastSyncedJson) return;
       try {
         const { error } = await supa.from('app_state').upsert(
-          { key: appKey, data: state, updated_at: new Date().toISOString() },
-          { onConflict: 'key' }
+          { user_id: _uid, key: appKey, data: state, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id,key' }
         );
         if (!error) lastSyncedJson = json;
       } catch (e) {}
     }
     function schedulePush() { clearTimeout(pushTimer); pushTimer = setTimeout(pushNow, 250); }
     function flushOnUnload() {
+      if (!_uid) return;
       const state = collect();
       const json = JSON.stringify(state);
       if (json === lastSyncedJson) return;
       try {
-        fetch(SUPABASE_URL + '/rest/v1/app_state?on_conflict=key', {
+        fetch(SUPABASE_URL + '/rest/v1/app_state?on_conflict=user_id%2Ckey', {
           method: 'POST',
           headers: {
             'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Authorization': 'Bearer ' + (_token || SUPABASE_KEY),
             'Content-Type': 'application/json',
             'Prefer': 'resolution=merge-duplicates',
           },
-          body: JSON.stringify({ key: appKey, data: state, updated_at: new Date().toISOString() }),
+          body: JSON.stringify({ user_id: _uid, key: appKey, data: state, updated_at: new Date().toISOString() }),
           keepalive: true,
         }).catch(() => {});
         lastSyncedJson = json;
@@ -105,8 +105,19 @@
     }
     (async function init() {
       supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      // Get authenticated user — all reads/writes are scoped to this user via RLS + explicit user_id
       try {
-        const { data, error } = await supa.from('app_state').select('data').eq('key', appKey).maybeSingle();
+        const { data: { session } } = await supa.auth.getSession();
+        if (!session) return; // not signed in — skip sync
+        _uid = session.user.id;
+        _token = session.access_token;
+      } catch (e) { return; }
+      try {
+        const { data, error } = await supa.from('app_state')
+          .select('data')
+          .eq('user_id', _uid)
+          .eq('key', appKey)
+          .maybeSingle();
         if (!error && data && data.data && Object.keys(data.data).length > 0) {
           lastSyncedJson = JSON.stringify(data.data);
           applyRemote(data.data);
@@ -114,11 +125,13 @@
           schedulePush();
         }
       } catch (e) {}
-      supa.channel('app_state_' + appKey)
+      supa.channel('app_state_' + appKey + '_' + _uid)
         .on('postgres_changes', {
-          event: '*', schema: 'public', table: 'app_state', filter: 'key=eq.' + appKey,
+          event: '*', schema: 'public', table: 'app_state',
+          filter: 'key=eq.' + appKey,
         }, (payload) => {
           if (!payload.new || !payload.new.data) return;
+          if (payload.new.user_id && payload.new.user_id !== _uid) return;
           const incoming = JSON.stringify(payload.new.data);
           if (incoming === lastSyncedJson) return;
           lastSyncedJson = incoming;

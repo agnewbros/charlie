@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Sign In — Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="credentials.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0b;
+      --surface: #111113;
+      --border: rgba(255,255,255,0.08);
+      --text-1: #fafafa;
+      --text-2: rgba(255,255,255,0.6);
+      --text-3: rgba(255,255,255,0.35);
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --error: #f87171;
+      --input-bg: rgba(255,255,255,0.05);
+      --input-border: rgba(255,255,255,0.12);
+      --input-focus: rgba(99,102,241,0.5);
+      --radius: 14px;
+      --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+    }
+    .card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 28px 28px;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .logo-icon {
+      font-size: 36px;
+      line-height: 1;
+      display: block;
+      margin-bottom: 10px;
+    }
+    .logo h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-1);
+      letter-spacing: -0.02em;
+    }
+    .logo p {
+      font-size: 13px;
+      color: var(--text-3);
+      margin-top: 4px;
+    }
+    .tabs {
+      display: flex;
+      gap: 0;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 3px;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-3);
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+    .field {
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-3);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      color: var(--text-1);
+      font-family: var(--font);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -webkit-appearance: none;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--input-focus);
+    }
+    input::placeholder { color: var(--text-3); }
+    .submit-btn {
+      width: 100%;
+      margin-top: 8px;
+      padding: 13px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s, transform 0.1s;
+    }
+    .submit-btn:hover { background: var(--accent-hover); }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .err-msg {
+      display: none;
+      margin-top: 14px;
+      padding: 11px 14px;
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.25);
+      border-radius: 10px;
+      color: var(--error);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .ok-msg {
+      display: none;
+      margin-top: 14px;
+      padding: 11px 14px;
+      background: rgba(52,211,153,0.1);
+      border: 1px solid rgba(52,211,153,0.25);
+      border-radius: 10px;
+      color: #34d399;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .forgot-link {
+      display: block;
+      text-align: center;
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--text-3);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .forgot-link:hover { color: var(--text-2); }
+    @media (max-width: 400px) {
+      .card { padding: 24px 18px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <span class="logo-icon">📊</span>
+      <h1>Dashboard</h1>
+      <p>Your personal fitness &amp; wellness tracker</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tabSignIn" type="button">Sign in</button>
+      <button class="tab-btn" id="tabSignUp" type="button">Create account</button>
+    </div>
+
+    <form id="authForm" novalidate>
+      <div class="field" id="nameField" style="display:none">
+        <label for="nameInput">Your name</label>
+        <input type="text" id="nameInput" placeholder="e.g. Charlie" autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="emailInput">Email</label>
+        <input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="passInput">Password</label>
+        <input type="password" id="passInput" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <button class="submit-btn" id="submitBtn" type="submit">Sign in</button>
+      <div class="err-msg" id="errMsg"></div>
+      <div class="ok-msg" id="okMsg"></div>
+    </form>
+
+    <span class="forgot-link" id="forgotLink">Forgot password?</span>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // Supabase client — credentials auto-seeded by credentials.js
+    var SUPA_URL = localStorage.getItem('user_supabase_url') || '';
+    var SUPA_KEY = localStorage.getItem('user_supabase_key') || '';
+    var supa = (SUPA_URL && SUPA_KEY && window.supabase)
+      ? window.supabase.createClient(SUPA_URL, SUPA_KEY)
+      : null;
+
+    // If already signed in, go straight to the dashboard
+    if (supa) {
+      supa.auth.getSession().then(function (r) {
+        if (r.data && r.data.session) {
+          var next = new URLSearchParams(window.location.search).get('next') || 'index.html';
+          window.location.replace(next);
+        }
+      });
+    }
+
+    var isSignUp = false;
+    var tabIn = document.getElementById('tabSignIn');
+    var tabUp = document.getElementById('tabSignUp');
+    var nameField = document.getElementById('nameField');
+    var nameInput = document.getElementById('nameInput');
+    var emailInput = document.getElementById('emailInput');
+    var passInput = document.getElementById('passInput');
+    var submitBtn = document.getElementById('submitBtn');
+    var errMsg = document.getElementById('errMsg');
+    var okMsg = document.getElementById('okMsg');
+    var forgotLink = document.getElementById('forgotLink');
+    var passLabel = passInput.previousElementSibling;
+
+    function setMode(signup) {
+      isSignUp = signup;
+      tabIn.classList.toggle('active', !signup);
+      tabUp.classList.toggle('active', signup);
+      nameField.style.display = signup ? '' : 'none';
+      submitBtn.textContent = signup ? 'Create account' : 'Sign in';
+      passLabel.textContent = signup ? 'Choose a password' : 'Password';
+      passInput.setAttribute('autocomplete', signup ? 'new-password' : 'current-password');
+      forgotLink.style.display = signup ? 'none' : '';
+      hideMsg();
+    }
+
+    tabIn.addEventListener('click', function () { setMode(false); });
+    tabUp.addEventListener('click', function () { setMode(true); });
+
+    function showErr(msg) {
+      errMsg.textContent = msg;
+      errMsg.style.display = '';
+      okMsg.style.display = 'none';
+    }
+    function showOk(msg) {
+      okMsg.textContent = msg;
+      okMsg.style.display = '';
+      errMsg.style.display = 'none';
+    }
+    function hideMsg() {
+      errMsg.style.display = 'none';
+      okMsg.style.display = 'none';
+    }
+
+    document.getElementById('authForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      if (!supa) { showErr('Dashboard is not connected to a database yet. Contact the owner.'); return; }
+
+      var email = emailInput.value.trim();
+      var pass = passInput.value;
+      var name = nameInput.value.trim();
+
+      if (!email || !pass) { showErr('Please enter your email and password.'); return; }
+      if (isSignUp && pass.length < 6) { showErr('Password must be at least 6 characters.'); return; }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = isSignUp ? 'Creating account…' : 'Signing in…';
+      hideMsg();
+
+      try {
+        if (isSignUp) {
+          var opts = name ? { data: { display_name: name } } : {};
+          var r = await supa.auth.signUp({ email: email, password: pass, options: opts });
+          if (r.error) throw r.error;
+          if (r.data.session) {
+            // Auto-confirmed (email confirmation disabled in Supabase)
+            if (name) localStorage.setItem('user_display_name', name);
+            localStorage.setItem('setup_completed', '1');
+            window.location.replace('index.html');
+          } else {
+            showOk('Check your email for a confirmation link, then come back to sign in.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create account';
+          }
+        } else {
+          var r = await supa.auth.signInWithPassword({ email: email, password: pass });
+          if (r.error) throw r.error;
+          var user = r.data.session && r.data.session.user;
+          if (user && user.user_metadata && user.user_metadata.display_name) {
+            localStorage.setItem('user_display_name', user.user_metadata.display_name);
+          }
+          localStorage.setItem('setup_completed', '1');
+          var next = new URLSearchParams(window.location.search).get('next') || 'index.html';
+          window.location.replace(next);
+        }
+      } catch (err) {
+        var msg = (err && err.message) || 'Something went wrong. Please try again.';
+        if (msg.toLowerCase().includes('invalid login')) msg = 'Incorrect email or password.';
+        if (msg.toLowerCase().includes('already registered')) msg = 'An account with that email already exists. Try signing in instead.';
+        if (msg.toLowerCase().includes('email not confirmed')) msg = 'Please confirm your email before signing in.';
+        showErr(msg);
+        submitBtn.disabled = false;
+        submitBtn.textContent = isSignUp ? 'Create account' : 'Sign in';
+      }
+    });
+
+    forgotLink.addEventListener('click', async function () {
+      var email = emailInput.value.trim();
+      if (!email) { showErr('Enter your email address above first.'); return; }
+      if (!supa) return;
+      forgotLink.textContent = 'Sending…';
+      try {
+        await supa.auth.resetPasswordForEmail(email);
+        showOk('Password reset email sent — check your inbox.');
+      } catch (_) {
+        showOk('If that email is registered, a reset link has been sent.');
+      }
+      forgotLink.textContent = 'Forgot password?';
+    });
+  })();
+  </script>
+</body>
+</html>

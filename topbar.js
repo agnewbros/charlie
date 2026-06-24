@@ -82,6 +82,18 @@
   font-size: 20px; line-height: 1;
   filter: grayscale(100%) brightness(1.4); opacity: 0.85;
 }
+.topbar-signout-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px; cursor: pointer; font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+  font-size: 15px; opacity: 0.55;
+  color: #fafafa;
+}
+.topbar-signout-btn:hover { background: rgba(255, 255, 255, 0.08); opacity: 0.8; }
 .bottombar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
   display: flex; justify-content: space-around; align-items: stretch;
@@ -163,6 +175,7 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   <a href="setup.html?force" class="topbar-finance-btn" aria-label="Settings">
     <span class="topbar-finance-icon" style="font-size:17px;opacity:.6">⚙️</span>
   </a>
+  <button class="topbar-signout-btn" id="topbarSignOut" type="button" aria-label="Sign out" title="Sign out">→</button>
 </header>`;
 
   const bottombarHtml = `
@@ -341,6 +354,16 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     injectStyleAndHTML();
     const btn = document.getElementById('topbarWaterAdd');
     if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); addWater(); });
+    const signOutBtn = document.getElementById('topbarSignOut');
+    if (signOutBtn) {
+      signOutBtn.addEventListener('click', function () {
+        if (window.AppConfig && typeof window.AppConfig.signOut === 'function') {
+          window.AppConfig.signOut();
+        } else {
+          window.location.replace('login.html');
+        }
+      });
+    }
     render();
     lockGestures();
     startModalLock();

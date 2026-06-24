@@ -1806,6 +1806,7 @@ img, video, canvas, svg { max-width: 100%; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="credentials.js"></script>
+<script>if (window.AppConfig) window.AppConfig.requireAuth();</script>
 </head>
 <body>
 
@@ -4385,9 +4386,8 @@ img, video, canvas, svg { max-width: 100%; }
   let pcPushTimer = null;
   let pcSuppressSync = false;
   let pcPendingRemote = null;
-  // JSON of the last state we sent or received — used to ignore
-  // realtime echoes of our own pushes so we don't infinite-loop.
   let pcLastSyncedJson = null;
+  let _pcUid = null, _pcToken = null; // cached from auth session
 
   const _pcOrigSet = localStorage.setItem.bind(localStorage);
   const _pcOrigRemove = localStorage.removeItem.bind(localStorage);
@@ -4479,7 +4479,7 @@ img, video, canvas, svg { max-width: 100%; }
   }
 
   async function pcPushNow() {
-    if (!pcSupa) return;
+    if (!pcSupa || !_pcUid) return;
     const state = pcCollectState();
     const json = JSON.stringify(state);
     if (json === pcLastSyncedJson) return;
@@ -4487,8 +4487,8 @@ img, video, canvas, svg { max-width: 100%; }
       const { error } = await pcSupa
         .from('app_state')
         .upsert(
-          { key: APP_KEY, data: state, updated_at: new Date().toISOString() },
-          { onConflict: 'key' }
+          { user_id: _pcUid, key: APP_KEY, data: state, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id,key' }
         );
       if (!error) pcLastSyncedJson = json;
     } catch (_) {}
@@ -4503,20 +4503,20 @@ img, video, canvas, svg { max-width: 100%; }
   // Backup push on unload via fetch keepalive so a fast refresh
   // doesn't lose the latest change before the debounced push fires.
   function pcFlushPushOnUnload() {
-    if (!pcSupa) return;
+    if (!pcSupa || !_pcUid) return;
     const state = pcCollectState();
     const json = JSON.stringify(state);
     if (json === pcLastSyncedJson) return;
     try {
-      fetch(SUPABASE_URL + '/rest/v1/app_state?on_conflict=key', {
+      fetch(SUPABASE_URL + '/rest/v1/app_state?on_conflict=user_id%2Ckey', {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Authorization': 'Bearer ' + (_pcToken || SUPABASE_KEY),
           'Content-Type': 'application/json',
           'Prefer': 'resolution=merge-duplicates',
         },
-        body: JSON.stringify({ key: APP_KEY, data: state, updated_at: new Date().toISOString() }),
+        body: JSON.stringify({ user_id: _pcUid, key: APP_KEY, data: state, updated_at: new Date().toISOString() }),
         keepalive: true,
       }).catch(() => {});
       pcLastSyncedJson = json;
@@ -4527,12 +4527,17 @@ img, video, canvas, svg { max-width: 100%; }
   // realtime updates so other devices' changes appear instantly.
   (async function pcInitCloudSync() {
     if (!window.supabase || !SUPABASE_URL || !SUPABASE_KEY) return;
-    // Skip if the placeholder values are still in place (local-only mode)
-    if (SUPABASE_URL.indexOf('PASTE-') === 0 || SUPABASE_KEY.indexOf('PASTE-') === 0) return;
     pcSupa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Get auth session — data is scoped per user via RLS + explicit user_id
+    try {
+      const { data: { session } } = await pcSupa.auth.getSession();
+      if (!session) return; // not signed in
+      _pcUid = session.user.id;
+      _pcToken = session.access_token;
+    } catch (_) { return; }
     try {
       const { data, error } = await pcSupa
-        .from('app_state').select('data').eq('key', APP_KEY).maybeSingle();
+        .from('app_state').select('data').eq('user_id', _pcUid).eq('key', APP_KEY).maybeSingle();
       if (!error && data && data.data && Object.keys(data.data).length > 0) {
         pcLastSyncedJson = JSON.stringify(data.data);
         pcMaybeApplyRemote(data.data);
@@ -4540,7 +4545,7 @@ img, video, canvas, svg { max-width: 100%; }
         pcSchedulePush();
       }
     } catch (_) {}
-    pcSupa.channel('app_state_' + APP_KEY)
+    pcSupa.channel('app_state_' + APP_KEY + '_' + _pcUid)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -4548,8 +4553,9 @@ img, video, canvas, svg { max-width: 100%; }
         filter: 'key=eq.' + APP_KEY,
       }, (payload) => {
         if (!payload.new || !payload.new.data) return;
+        if (payload.new.user_id && payload.new.user_id !== _pcUid) return;
         const incoming = JSON.stringify(payload.new.data);
-        if (incoming === pcLastSyncedJson) return; // echo of our own push
+        if (incoming === pcLastSyncedJson) return;
         pcLastSyncedJson = incoming;
         pcMaybeApplyRemote(payload.new.data);
       })
