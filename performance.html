@@ -887,6 +887,8 @@ function calcScore(vals,g){
 }
 
 async function initReadiness(){
+  let feelsReady=true;
+
   // wire sliders
   SLIDERS.forEach(function([sid,vid]){
     const el=document.getElementById(sid.trim()); if(!el) return;
@@ -894,7 +896,6 @@ async function initReadiness(){
     el.addEventListener('input',()=>{ vel.textContent=el.value; });
   });
 
-  let feelsReady=true;
   document.getElementById('rdyYes').addEventListener('click',function(){ feelsReady=true; this.classList.add('active'); document.getElementById('rdyNo').classList.remove('active'); });
   document.getElementById('rdyNo').addEventListener('click',function(){ feelsReady=false; this.classList.add('active'); document.getElementById('rdyYes').classList.remove('active'); });
 
@@ -912,12 +913,6 @@ async function initReadiness(){
     }
     if(data.injuries!=null) document.getElementById('rdInjuries').value=data.injuries;
   }
-
-  // check if already done today
-  try{
-    const {data}=await db().from('readiness').select('*').eq('date',todayStr()).maybeSingle();
-    if(data) { showReadinessScore(data.readiness_score, data); return; }
-  }catch(e){}
 
   document.getElementById('btnReadiness').addEventListener('click',async function(){
     const vals={feels_ready:feelsReady,injuries:document.getElementById('rdInjuries').value};
@@ -937,6 +932,12 @@ async function initReadiness(){
     document.getElementById('rdForm').style.display='block';
     if(_lastReadinessVals) prefillForm(_lastReadinessVals);
   });
+
+  // check if already done today — must come after all listeners are wired
+  try{
+    const {data}=await db().from('readiness').select('*').eq('date',todayStr()).maybeSingle();
+    if(data){ showReadinessScore(data.readiness_score, data); return; }
+  }catch(e){}
 }
 
 // ─────────────────────────────────────────────────────────────────
