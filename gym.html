@@ -2120,6 +2120,11 @@ img, video, canvas, svg { max-width: 100%; }
     </div>
 
     <div class="po-set-section">
+      <h4>Exercises</h4>
+      <div class="po-set-list" id="setExercises"></div>
+    </div>
+
+    <div class="po-set-section">
       <h4>Data</h4>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="po-btn-secondary" id="setExport">Export JSON</button>
@@ -2223,12 +2228,66 @@ img, video, canvas, svg { max-width: 100%; }
   <div class="ex-sheet-head">
     <button class="sheet-back-btn" id="exLogBack" type="button">← Back</button>
     <h3 id="exLogTitle" style="font-size:16px;flex:1;margin:0"></h3>
+    <button class="sheet-close-btn" id="exLogEditBtn" type="button" title="Edit exercise" style="font-size:15px">⚙</button>
   </div>
   <div class="log-prev" id="exLogPrev"></div>
   <div class="log-sets-wrap" id="exLogSets"></div>
   <div class="log-actions">
     <button class="log-add-set" id="exLogAddSet" type="button">+ Add Set</button>
     <button class="log-finish-btn" id="exLogFinish" type="button">Done</button>
+  </div>
+</div>
+
+<!-- Exercise Edit Modal -->
+<div class="po-modal-bg" id="exEditBg">
+  <div class="po-modal" style="max-width:440px">
+    <h3>Edit Exercise</h3>
+    <div class="po-field" style="margin-bottom:12px">
+      <label>Name</label>
+      <input type="text" id="exEditName" placeholder="Exercise name" maxlength="60"
+        style="width:100%;padding:12px 14px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:10px;color:var(--text-1);font-family:inherit;font-size:15px;outline:none">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="po-field">
+        <label>Day</label>
+        <select id="exEditDay" style="width:100%;padding:11px 12px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:10px;color:var(--text-1);font-family:inherit;font-size:14px;outline:none"></select>
+      </div>
+      <div class="po-field">
+        <label>Gym</label>
+        <select id="exEditGym" style="width:100%;padding:11px 12px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:10px;color:var(--text-1);font-family:inherit;font-size:14px;outline:none"></select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="po-field">
+        <label>Min reps</label>
+        <input type="number" id="exEditRepMin" min="1" max="50"
+          style="width:100%;padding:11px 10px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:10px;color:var(--text-1);font-family:inherit;font-size:15px;text-align:center;outline:none">
+      </div>
+      <div class="po-field">
+        <label>Max reps</label>
+        <input type="number" id="exEditRepMax" min="1" max="50"
+          style="width:100%;padding:11px 10px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:10px;color:var(--text-1);font-family:inherit;font-size:15px;text-align:center;outline:none">
+      </div>
+      <div class="po-field">
+        <label>Step (kg)</label>
+        <input type="number" id="exEditStep" min="0.25" step="0.25"
+          style="width:100%;padding:11px 10px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:10px;color:var(--text-1);font-family:inherit;font-size:15px;text-align:center;outline:none">
+      </div>
+    </div>
+    <div class="po-field" style="margin-bottom:12px">
+      <label>Starting weight (kg)</label>
+      <input type="number" id="exEditStartWeight" min="0"
+        style="width:100%;padding:12px 14px;background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:10px;color:var(--text-1);font-family:inherit;font-size:15px;outline:none">
+    </div>
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 0;font-size:13px;color:var(--text-2);cursor:pointer;margin-bottom:4px">
+      <input type="checkbox" id="exEditBw" style="width:18px;height:18px;accent-color:var(--good)">
+      Bodyweight exercise (logs reps only, no weight)
+    </label>
+    <div class="po-modal-actions" style="margin-top:16px">
+      <button class="po-btn-secondary" id="exEditCancel">Cancel</button>
+      <button class="po-btn-primary" id="exEditSave">Save changes</button>
+    </div>
+    <span class="po-delete-link" id="exEditDelete">Delete this exercise</span>
   </div>
 </div>
 
@@ -3051,6 +3110,50 @@ img, video, canvas, svg { max-width: 100%; }
         saveState(); renderSettings(); renderAll();
       });
     });
+
+    // Exercises list
+    const exList = $('setExercises');
+    const exs = state.exercises || [];
+    if (!exs.length) {
+      exList.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:8px 0">No exercises yet. Use the + button to add one.</div>';
+    } else {
+      exList.innerHTML = exs.map((e, i) => {
+        const meta = [
+          e.bw ? 'BW' : (e.startWeight ? e.startWeight + unit() + ' start' : ''),
+          e.repMin + '–' + e.repMax + ' reps',
+          e.step + unit() + ' step'
+        ].filter(Boolean).join(' · ');
+        return '<div class="po-set-row" style="flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px" data-i="' + i + '">'
+          + '<div style="display:flex;align-items:center;width:100%;gap:6px">'
+          +   '<span style="flex:1;font-size:13px;font-weight:600;color:var(--text-1)">' + escape(e.name) + '</span>'
+          +   '<button class="po-mini-btn" data-action="edit" style="color:var(--text-3);font-size:13px" title="Edit">⚙</button>'
+          +   '<button class="po-mini-btn" data-action="del" aria-label="Delete" style="color:var(--text-4)">×</button>'
+          + '</div>'
+          + '<div style="font-size:11px;color:var(--text-3);font-family:var(--font-mono)">' + meta + '</div>'
+          + '</div>';
+      }).join('');
+      exList.querySelectorAll('.po-set-row').forEach(row => {
+        const i = parseInt(row.dataset.i, 10);
+        const ex = exs[i];
+        row.querySelector('[data-action="edit"]').addEventListener('click', () => {
+          $('setModalBg').classList.remove('show');
+          openExEdit(ex.id);
+          function reopenSettings() {
+            renderSettings();
+            $('setModalBg').classList.add('show');
+          }
+          $('exEditSave').addEventListener('click', reopenSettings, { once: true });
+          $('exEditCancel').addEventListener('click', reopenSettings, { once: true });
+          $('exEditDelete').addEventListener('click', reopenSettings, { once: true });
+        });
+        row.querySelector('[data-action="del"]').addEventListener('click', () => {
+          if (!confirm('Delete "' + ex.name + '"? All logged sets for this exercise will also be deleted.')) return;
+          state.exercises.splice(i, 1);
+          delete state.logs[ex.id];
+          saveState(); renderSettings(); renderAll();
+        });
+      });
+    }
   }
   $('settingsBtn').addEventListener('click', () => {
     renderSettings();
@@ -4336,6 +4439,75 @@ img, video, canvas, svg { max-width: 100%; }
   }
 
   $('exLogBack').addEventListener('click', function() { closeExLog(); openExSearch(); });
+
+  // ---- Exercise Edit Modal ----
+  function openExEdit(exId) {
+    var ex = (state.exercises || []).find(function(e) { return e.id === exId; });
+    if (!ex) return;
+    $('exEditName').value = ex.name || '';
+    $('exEditRepMin').value = ex.repMin || 5;
+    $('exEditRepMax').value = ex.repMax || 10;
+    $('exEditStep').value = ex.step || 2.5;
+    $('exEditStartWeight').value = ex.startWeight || 0;
+    $('exEditBw').checked = !!ex.bw;
+    var daySel = $('exEditDay');
+    daySel.innerHTML = (state.days || []).map(function(d) {
+      return '<option value="' + d.id + '"' + (d.id === ex.day ? ' selected' : '') + '>' + escape(d.name) + '</option>';
+    }).join('');
+    var gymSel = $('exEditGym');
+    gymSel.innerHTML = (state.gyms || []).map(function(g) {
+      return '<option value="' + g.id + '"' + (g.id === ex.gym ? ' selected' : '') + '>' + escape(g.name) + '</option>';
+    }).join('') + '<option value="both"' + (ex.gym === 'both' ? ' selected' : '') + '>Both gyms</option>';
+    $('exEditBg').dataset.exid = exId;
+    $('exEditBg').classList.add('show');
+  }
+
+  $('exLogEditBtn').addEventListener('click', function() {
+    if (_logExId) openExEdit(_logExId);
+  });
+  $('exEditCancel').addEventListener('click', function() { $('exEditBg').classList.remove('show'); });
+  $('exEditSave').addEventListener('click', function() {
+    var exId = $('exEditBg').dataset.exid;
+    var ex = (state.exercises || []).find(function(e) { return e.id === exId; });
+    if (!ex) return;
+    var newName = $('exEditName').value.trim();
+    if (!newName) { alert('Exercise name cannot be empty.'); return; }
+    ex.name = newName;
+    ex.day = $('exEditDay').value;
+    ex.gym = $('exEditGym').value;
+    ex.repMin = parseInt($('exEditRepMin').value) || 5;
+    ex.repMax = parseInt($('exEditRepMax').value) || 10;
+    ex.step = parseFloat($('exEditStep').value) || 2.5;
+    ex.startWeight = parseFloat($('exEditStartWeight').value) || 0;
+    ex.bw = $('exEditBw').checked;
+    // Also update exercise registry name
+    try {
+      var reg = JSON.parse(localStorage.getItem(EX_REG_KEY)) || {};
+      if (reg[exId]) reg[exId].name = newName;
+      localStorage.setItem(EX_REG_KEY, JSON.stringify(reg));
+    } catch (e) {}
+    saveState();
+    $('exEditBg').classList.remove('show');
+    // Update log sheet title if still open
+    if (_logExId === exId) {
+      $('exLogTitle').textContent = newName;
+      _logExName = newName;
+    }
+    renderAll();
+  });
+  $('exEditDelete').addEventListener('click', function() {
+    var exId = $('exEditBg').dataset.exid;
+    var ex = (state.exercises || []).find(function(e) { return e.id === exId; });
+    if (!ex) return;
+    if (!confirm('Delete "' + ex.name + '"? This removes the exercise and all its logged sets. This cannot be undone.')) return;
+    state.exercises = state.exercises.filter(function(e) { return e.id !== exId; });
+    delete state.logs[exId];
+    saveState();
+    $('exEditBg').classList.remove('show');
+    closeExLog();
+    renderAll();
+  });
+
   $('exLogAddSet').addEventListener('click', function() {
     var last = _logSets[_logSets.length - 1] || { weight: 0, reps: 8, step: 2.5 };
     _logSets.push({ weight: last.weight, reps: last.reps, completed: false, step: last.step });
