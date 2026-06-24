@@ -173,7 +173,7 @@ input[type=date].pi-input{color-scheme:dark}
     <button class="pi-tab active" data-tab="strength">STRENGTH</button>
     <button class="pi-tab" data-tab="health">HEALTH</button>
     <button class="pi-tab" data-tab="activities">ACTIVITIES</button>
-    <button class="pi-tab" data-tab="readiness">READINESS</button>
+    <button class="pi-tab" data-tab="readiness">WELLNESS</button>
     <button class="pi-tab" data-tab="recovery">RECOVERY</button>
     <button class="pi-tab" data-tab="insights">INSIGHTS</button>
     <button class="pi-tab" data-tab="coach">COACH</button>
@@ -268,7 +268,7 @@ input[type=date].pi-input{color-scheme:dark}
   ════════════════════════════════════════════ -->
   <div id="tab-readiness" style="display:none">
     <div id="rdScoreCard" class="pi-card" style="display:none">
-      <div class="pi-card-title">Today's Readiness</div>
+      <div class="pi-card-title">Today's Wellness</div>
       <div class="pi-score-wrap">
         <div class="pi-score-num" id="rdScoreNum">—</div>
         <div class="pi-score-sub">/ 100</div>
@@ -296,7 +296,7 @@ input[type=date].pi-input{color-scheme:dark}
       </div>
       <div id="rdLiveWrap" style="display:none;text-align:center;padding:12px 0 4px">
         <div id="rdLiveNum" style="font-size:48px;font-weight:900;line-height:1">—</div>
-        <div style="font-size:11px;color:var(--text-4);letter-spacing:.08em;font-weight:700;margin-top:2px">ESTIMATED SCORE / 100</div>
+        <div style="font-size:11px;color:var(--text-4);letter-spacing:.08em;font-weight:700;margin-top:2px">WELLNESS SCORE / 100</div>
         <div id="rdLiveRec" style="font-size:13px;color:var(--text-2);margin-top:6px"></div>
       </div>
       <button class="pi-btn primary" id="btnReadiness">Save Score</button>
@@ -852,9 +852,9 @@ const SLIDERS=[
 
 function scoreClass(s){ return s>=70?'high':s>=45?'medium':'low'; }
 function readinessRec(s){
-  if(s>=70) return {txt:'High readiness — push for performance. Good day for heavy lifts or a hard session.',cls:''};
-  if(s>=45) return {txt:'Good to train — stick to your planned session at normal intensity.',cls:'warn'};
-  return {txt:'Train lighter today — reduce load by 10–15% and focus on technique over intensity.',cls:'bad'};
+  if(s>=70) return {txt:'Feeling good — energy and recovery metrics are strong.',cls:''};
+  if(s>=45) return {txt:'Feeling balanced — some areas to keep an eye on.',cls:'warn'};
+  return {txt:'Feeling run down — worth prioritising rest and recovery today.',cls:'bad'};
 }
 
 let _lastReadinessVals=null;
@@ -1136,17 +1136,14 @@ async function initCoach(){
     switch(q){
       case 'train':{
         const lines=[];
-        if(score!=null) lines.push('Readiness score: '+score+'/100.');
+        if(score!=null) lines.push('Wellness score: '+score+'/100.');
         if(g.sleep!=null) lines.push('Sleep last night: '+g.sleep.toFixed(1)+'h.');
         if(g.body_battery!=null) lines.push('Body battery: '+Math.round(g.body_battery)+'.');
         if(g.resting_hr!=null) lines.push('Resting HR: '+Math.round(g.resting_hr)+' bpm.');
         lines.push('');
-        if(fatigueSignals) lines.push('⚠ Fatigue detected: '+fatigueSignals.join(', ')+'.\n\nRecommendation: Active recovery or reduced volume today.');
-        else if(score!=null&&score>=75) lines.push('Recommendation: Strong conditions for a hard session — push performance today.');
-        else if(score!=null&&score>=50) lines.push('Recommendation: Train as planned at normal intensity.');
-        else if(score!=null) lines.push('Recommendation: Keep it light or rest. Your body needs recovery.');
-        else if((g.body_battery||0)>=60) lines.push('Recommendation: Body battery is solid. Good to train.');
-        else lines.push('Recommendation: Body battery is low. Consider reduced volume or rest.');
+        if(fatigueSignals) lines.push('⚠ Fatigue detected: '+fatigueSignals.join(', ')+'.');
+        else if((g.body_battery||0)>=60) lines.push('Body battery is solid.');
+        else if(g.body_battery!=null) lines.push('Body battery is lower than ideal — recovery metrics worth monitoring.');
         return lines.join('\n');
       }
       case 'weaker':{
