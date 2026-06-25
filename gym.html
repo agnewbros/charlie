@@ -4919,8 +4919,8 @@ img, video, canvas, svg { max-width: 100%; }
     for (var i = 0; i < numSets; i++) {
       var bufSet = sessBufferGetSetResult(_sessBuffer, exCfg.exId, i);
       var completed = !!(bufSet && bufSet.completed);
-      var w = bufSet ? bufSet.weight : suggestedW;
-      var r = bufSet ? bufSet.reps : suggestedR;
+      var w = bufSet ? bufSet.weight : '';
+      var r = bufSet ? bufSet.reps : '';
 
       html += '<div class="sess-set-row' + (completed ? ' is-done' : '') + '" data-si="' + i + '">'
         + '<div class="sess-set-num">' + (completed ? '✓' : (i + 1)) + '</div>';
