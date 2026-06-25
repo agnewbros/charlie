@@ -2344,6 +2344,7 @@ img, video, canvas, svg { max-width: 100%; }
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="po-btn-secondary" id="setExport">Export JSON</button>
         <button class="po-btn-secondary" id="setImport">Import JSON</button>
+        <button class="po-btn-secondary" id="setWipeLogs" style="color:var(--bad);border-color:rgba(255,138,138,0.3)">Wipe workout logs</button>
         <button class="po-btn-secondary" id="setReset" style="color:var(--bad);border-color:rgba(255,138,138,0.3)">Reset all</button>
       </div>
       <input type="file" id="setImportFile" accept=".json" style="display:none">
@@ -3683,6 +3684,19 @@ img, video, canvas, svg { max-width: 100%; }
     const a = document.createElement('a');
     a.href = url; a.download = 'po-coach-data-' + new Date().toISOString().slice(0,10) + '.json';
     a.click(); URL.revokeObjectURL(url);
+  });
+  $('setWipeLogs').addEventListener('click', () => {
+    if (!confirm('Wipe all logged sets and reset to Week 1, Session 1? This cannot be undone.')) return;
+    state.logs = {};
+    saveState();
+    var sess = loadSession() || { days: [], sessionCount: 0 };
+    sess.sessionCount = 0;
+    saveSession(sess);
+    clearSessBuffer();
+    _sessBuffer = null;
+    renderAll();
+    $('setModal').style.display = 'none';
+    alert('Done — all workout logs cleared. Starting from Week 1, Session 1.');
   });
   $('setImport').addEventListener('click', () => $('setImportFile').click());
   $('setImportFile').addEventListener('change', e => {
