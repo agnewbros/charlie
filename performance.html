@@ -571,13 +571,15 @@ function initStrength(){
   const pills=document.getElementById('exPills');
   pills.innerHTML='';
 
-  if(!sorted.length){
+  const named=sorted.filter(id=>!!reg[id]);
+
+  if(!named.length){
     pills.innerHTML='<div style="color:var(--text-4);font-size:13px">No exercises logged yet — use the Gym tab to record workouts.</div>';
     return;
   }
 
-  sorted.forEach(function(id,i){
-    const name=reg[id]||'Exercise';
+  named.forEach(function(id,i){
+    const name=reg[id];
     const btn=document.createElement('button');
     btn.className='pi-ex-pill'+(i===0?' active':'');
     btn.textContent=name;
@@ -589,7 +591,7 @@ function initStrength(){
     pills.appendChild(btn);
   });
 
-  renderStrength(sorted[0],reg[sorted[0]]||'Exercise',state);
+  renderStrength(named[0],reg[named[0]],state);
 }
 
 // ─────────────────────────────────────────────────────────────────

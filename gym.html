@@ -4492,9 +4492,20 @@ img, video, canvas, svg { max-width: 100%; }
     try { localStorage.setItem(EX_REG_KEY, JSON.stringify(reg)); } catch (e) {}
   }
   function registerExercise(id, name) {
+    if (!id || !name) return;
     const reg = loadRegistry();
     if (reg[id] !== name) { reg[id] = name; saveRegistry(reg); }
   }
+
+  // Seed registry with all current program exercises so performance tab always finds names
+  (function() {
+    const reg = loadRegistry();
+    let changed = false;
+    state.exercises.forEach(function(ex) {
+      if (ex.id && ex.name && reg[ex.id] !== ex.name) { reg[ex.id] = ex.name; changed = true; }
+    });
+    if (changed) saveRegistry(reg);
+  })();
 
   const COMMON_EX = [
     'Back Squat','Front Squat','Romanian Deadlift','Conventional Deadlift',
