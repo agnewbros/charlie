@@ -2266,11 +2266,24 @@ img, video, canvas, svg { max-width: 100%; }
       <label class="prog-start-label" for="sfStartDate">Week 1 started</label>
       <input type="date" class="prog-start-input" id="sfStartDate">
       <span class="prog-current-week" id="sfCurrentWeek"></span>
+      <button type="button" id="sfEditProgBtn" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--text-3);font-size:12px;font-weight:600;padding:5px 10px;cursor:pointer;font-family:inherit;flex-shrink:0">Edit</button>
     </div>
     <div class="prog-week-row" id="sfWeekRow"></div>
     <div class="prog-overview" id="sfOverview"></div>
     <div class="prog-day-seg" id="sfDaySeg"></div>
     <div id="sfTable"></div>
+  </div>
+</div>
+
+<!-- Programme Editor Modal -->
+<div class="po-modal-bg" id="sfEditBg">
+  <div class="po-modal">
+    <h3>Edit Programme</h3>
+    <div id="sfEditDaySeg" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div id="sfEditContent"></div>
+    <div class="po-modal-actions">
+      <button class="po-btn-primary" id="sfEditClose">Done</button>
+    </div>
   </div>
 </div>
 
@@ -2327,6 +2340,13 @@ img, video, canvas, svg { max-width: 100%; }
     <div class="po-set-section">
       <h4>Exercises</h4>
       <div class="po-set-list" id="setExercises"></div>
+    </div>
+
+    <div class="po-set-section">
+      <h4>Exercise Library</h4>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:8px">Custom exercises appear in the session search.</div>
+      <div class="po-set-list" id="setCustomExList"></div>
+      <button class="po-add-row-btn" id="setAddCustomEx">+ Add exercise</button>
     </div>
 
     <div class="po-set-section">
@@ -2479,6 +2499,17 @@ img, video, canvas, svg { max-width: 100%; }
     <button class="log-add-set" id="exLogAddSet" type="button">+ Add Set</button>
     <button class="log-finish-btn" id="exLogFinish" type="button">Done</button>
   </div>
+</div>
+
+<!-- Session Exercise Picker Sheet -->
+<div class="ex-sheet" id="sessExSheet">
+  <div class="ex-sheet-handle"></div>
+  <div class="ex-sheet-head">
+    <h3>Add Exercise</h3>
+    <button class="sheet-close-btn" id="sessExSheetClose" type="button">×</button>
+  </div>
+  <input class="ex-sheet-search" id="sessExSheetQ" type="text" placeholder="Search or type new exercise…" autocomplete="off" autocorrect="off" spellcheck="false">
+  <div class="ex-sheet-list" id="sessExSheetList"></div>
 </div>
 
 <!-- Exercise Edit Modal -->
@@ -3344,6 +3375,24 @@ img, video, canvas, svg { max-width: 100%; }
         });
       });
     }
+
+    // Custom exercise library
+    var custExList = $('setCustomExList');
+    var custEx = loadCustomEx();
+    custExList.innerHTML = custEx.length
+      ? custEx.map(function(name, i) {
+          return '<div class="po-set-row" data-ci="' + i + '">'
+            + '<span style="flex:1;font-size:13px;color:var(--text-1)">' + escape(name) + '</span>'
+            + '<button class="po-mini-btn" data-action="delce">×</button>'
+            + '</div>';
+        }).join('')
+      : '<div style="font-size:12px;color:var(--text-3);padding:8px 0">No custom exercises yet.</div>';
+    custExList.querySelectorAll('.po-set-row').forEach(function(row) {
+      var ci = parseInt(row.dataset.ci, 10);
+      row.querySelector('[data-action="delce"]').addEventListener('click', function() {
+        var ex = loadCustomEx(); ex.splice(ci, 1); saveCustomEx(ex); renderSettings();
+      });
+    });
   }
   $('settingsBtn').addEventListener('click', () => {
     renderSettings();
@@ -3677,13 +3726,30 @@ img, video, canvas, svg { max-width: 100%; }
     state.days.push({ id, name });
     saveState(); renderSettings(); renderAll();
   });
+  $('setAddCustomEx').addEventListener('click', function() {
+    var name = (prompt('Exercise name:') || '').trim();
+    if (!name) return;
+    var ex = loadCustomEx();
+    if (ex.map(function(n) { return n.toLowerCase(); }).indexOf(name.toLowerCase()) !== -1) {
+      alert('Already in your library.'); return;
+    }
+    ex.push(name); saveCustomEx(ex); renderSettings();
+  });
 
   // Export / Import / Reset
   $('setExport').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const today = new Date().toISOString().slice(0, 10);
+    const backup = { _v: 2, _date: today, d: {} };
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('po_') || k.startsWith('sf_') || k.startsWith('wt_') || k === 'user_display_name')) {
+        backup.d[k] = localStorage.getItem(k);
+      }
+    }
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'po-coach-data-' + new Date().toISOString().slice(0,10) + '.json';
+    a.href = url; a.download = 'charlie-backup-' + today + '.json';
     a.click(); URL.revokeObjectURL(url);
   });
   $('setWipeLogs').addEventListener('click', () => {
@@ -3702,13 +3768,21 @@ img, video, canvas, svg { max-width: 100%; }
   $('setImport').addEventListener('click', () => $('setImportFile').click());
   $('setImportFile').addEventListener('change', e => {
     const file = e.target.files[0]; if (!file) return;
+    e.target.value = '';
     const reader = new FileReader();
     reader.onload = () => {
       try {
         const parsed = JSON.parse(reader.result);
-        if (!confirm('Replace ALL current data with the imported file? This cannot be undone.')) return;
-        state = normalize(parsed);
-        saveState(); renderSettings(); renderAll();
+        if (!confirm('Restore backup? This replaces ALL current data and reloads the page. Cannot be undone.')) return;
+        if (parsed._v === 2 && parsed.d) {
+          Object.entries(parsed.d).forEach(([k, v]) => {
+            try { localStorage.setItem(k, v); } catch (_) {}
+          });
+          window.location.reload();
+        } else {
+          state = normalize(parsed);
+          saveState(); renderSettings(); renderAll();
+        }
       } catch (err) { alert('Import failed: ' + err.message); }
     };
     reader.readAsText(file);
@@ -4434,6 +4508,14 @@ img, video, canvas, svg { max-width: 100%; }
     'Box Jump','Step Up','Incline DB Press','Chest-Supported Row',
   ];
 
+  const CUSTOM_EX_KEY = 'po_custom_ex_v1';
+  function loadCustomEx() {
+    try { return JSON.parse(localStorage.getItem(CUSTOM_EX_KEY)) || []; } catch(e) { return []; }
+  }
+  function saveCustomEx(list) {
+    try { localStorage.setItem(CUSTOM_EX_KEY, JSON.stringify(list)); } catch(e) {}
+  }
+
   function getAllKnownEx() {
     const reg = loadRegistry();
     const map = {};
@@ -4534,7 +4616,7 @@ img, video, canvas, svg { max-width: 100%; }
 
   $('exSearchQ').addEventListener('input', function() { renderExSearch($('exSearchQ').value); });
   $('exSearchClose').addEventListener('click', closeExSearch);
-  $('sheetBg').addEventListener('click', function() { closeExLog(); closeExSearch(); });
+  $('sheetBg').addEventListener('click', function() { closeExLog(); closeExSearch(); closeSessExSheet(); });
   $('fabBtn').addEventListener('click', openExSearch);
 
   // ---- Log sheet ----
@@ -4999,11 +5081,69 @@ img, video, canvas, svg { max-width: 100%; }
     renderSession();
   });
 
-  // Add exercise
-  $('sessAddExBtn').addEventListener('click', function() {
-    var name = prompt('Exercise name:');
+  // ---- Session exercise picker sheet ----
+  function openSessExSheet() {
+    $('sessExSheetQ').value = '';
+    renderSessExSheet('');
+    $('sessExSheet').classList.add('open');
+    $('sheetBg').classList.add('show');
+    setTimeout(function() { $('sessExSheetQ').focus(); }, 320);
+  }
+  function closeSessExSheet() {
+    $('sessExSheet').classList.remove('open');
+    if (!$('exSearch').classList.contains('open') && !$('exLogSheet').classList.contains('open')) {
+      $('sheetBg').classList.remove('show');
+    }
+  }
+  function renderSessExSheet(q) {
+    var list = $('sessExSheetList');
+    var query = (q || '').toLowerCase().trim();
+    var reg = loadRegistry();
+    var customEx = loadCustomEx();
+    var used = [];
+    var usedNames = new Set();
+    Object.entries(reg).forEach(function(kv) {
+      var name = kv[1];
+      if (!usedNames.has(name.toLowerCase())) {
+        used.push({ name: name, lastDate: getLastLogDate(kv[0]) });
+        usedNames.add(name.toLowerCase());
+      }
+    });
+    used.sort(function(a, b) { return b.lastDate.localeCompare(a.lastDate); });
+    COMMON_EX.concat(customEx).forEach(function(name) {
+      if (!usedNames.has(name.toLowerCase())) {
+        used.push({ name: name, lastDate: '' });
+        usedNames.add(name.toLowerCase());
+      }
+    });
+    var items = query
+      ? used.filter(function(e) { return e.name.toLowerCase().indexOf(query) !== -1; })
+      : used.filter(function(e) { return e.lastDate; });
+    var html = '';
+    if (!items.length && !query) {
+      html = '<div class="ex-search-empty">Type to search, or enter a new exercise name.</div>';
+    } else {
+      items.slice(0, 25).forEach(function(e) {
+        var badge = e.lastDate ? '<span class="ex-search-date">' + fmtExDate(e.lastDate) + '</span>' : '';
+        html += '<button class="ex-search-item" data-name="' + escape(e.name) + '">'
+          + '<span class="ex-search-name">' + escape(e.name) + '</span>' + badge + '</button>';
+      });
+    }
+    if (query && !usedNames.has(query)) {
+      html += '<button class="ex-search-create" data-rawname="' + escape(q.trim()) + '">'
+        + '+ Add &ldquo;' + escape(q.trim()) + '&rdquo;</button>';
+    }
+    list.innerHTML = html;
+    list.querySelectorAll('.ex-search-item').forEach(function(btn) {
+      btn.addEventListener('click', function() { pickSessEx(btn.dataset.name); });
+    });
+    var createBtn = list.querySelector('.ex-search-create');
+    if (createBtn) createBtn.addEventListener('click', function() { pickSessEx(createBtn.dataset.rawname); });
+  }
+  function pickSessEx(name) {
     if (!name || !name.trim()) return;
     name = name.trim();
+    closeSessExSheet();
     var sess = loadSession() || { days: [], sessionCount: 0 };
     if (!_sessBuffer) {
       _sessBuffer = { date: wtDateKey(new Date()), sessionCount: sess.sessionCount, exercises: [] };
@@ -5013,7 +5153,12 @@ img, video, canvas, svg { max-width: 100%; }
     saveSessBuffer(_sessBuffer);
     registerExercise(exId, name);
     renderSessExCards(sess);
-  });
+  }
+  $('sessExSheetClose').addEventListener('click', closeSessExSheet);
+  $('sessExSheetQ').addEventListener('input', function() { renderSessExSheet($('sessExSheetQ').value); });
+
+  // Add exercise
+  $('sessAddExBtn').addEventListener('click', openSessExSheet);
 
   // ---- Plan Editor (called from renderSettings) ----
   function renderPlanEditor() {
@@ -5367,7 +5512,8 @@ img, video, canvas, svg { max-width: 100%; }
     { id: 'd4', label: 'D4 · OHP'      },
   ];
 
-  const SF_DATA = {
+  const SF_DATA_KEY = 'po_sf_data_v1';
+  const SF_DATA_DEFAULTS = {
     d1: {
       main: { name: 'Back Squat', targets: [90, 97.5, 105, 110] },
       acc: [
@@ -5406,6 +5552,13 @@ img, video, canvas, svg { max-width: 100%; }
       ],
     },
   };
+  function loadSFData() {
+    try { const s = localStorage.getItem(SF_DATA_KEY); return s ? JSON.parse(s) : SF_DATA_DEFAULTS; } catch(e) { return SF_DATA_DEFAULTS; }
+  }
+  function saveSFData() {
+    try { localStorage.setItem(SF_DATA_KEY, JSON.stringify(SF_DATA)); } catch(e) {}
+  }
+  let SF_DATA = loadSFData();
 
   const SF_START_KEY = 'sf_start_date';
   let sfWeek = 0;
@@ -5565,6 +5718,109 @@ img, video, canvas, svg { max-width: 100%; }
       renderAll();
       updateCurrentWeekLabel();
     });
+  });
+
+  // ---- Programme Editor ----
+  let _sfEditDay = SF_DAYS[0].id;
+
+  function renderSFEditor() {
+    function escH(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    const seg = document.getElementById('sfEditDaySeg');
+    if (!seg) return;
+    seg.innerHTML = SF_DAYS.map(function(d) {
+      return '<button class="prog-day-btn' + (_sfEditDay === d.id ? ' active' : '') + '" data-day="' + d.id + '" style="flex-shrink:0">' + d.label + '</button>';
+    }).join('');
+    seg.querySelectorAll('.prog-day-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() { _sfEditDay = btn.dataset.day; renderSFEditor(); });
+    });
+
+    const data = SF_DATA[_sfEditDay];
+    const content = document.getElementById('sfEditContent');
+    if (!data || !content) return;
+
+    let html = '<div class="po-set-section"><h4>Main Lift</h4>'
+      + '<div class="po-set-row"><input type="text" id="sfEdMainName" value="' + escH(data.main.name) + '" placeholder="Lift name" style="flex:1;font-size:14px;font-weight:600"></div>'
+      + '<div style="font-size:11px;color:var(--text-3);margin:10px 0 6px">Week targets (kg)</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">';
+
+    SF_WEEKS.slice(0, 4).forEach(function(w, i) {
+      const v = data.main.targets[i];
+      html += '<div style="text-align:center">'
+        + '<div style="font-size:10px;color:var(--text-3);margin-bottom:4px">' + w.label + '</div>'
+        + '<input type="number" class="sfEdTarget" data-wi="' + i + '" value="' + (v != null ? v : '') + '" min="0" step="0.5" placeholder="—"'
+        + ' style="width:100%;text-align:center;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:8px 4px;color:var(--text-1);font-size:13px;font-family:inherit;outline:none;-webkit-appearance:none">'
+        + '</div>';
+    });
+    html += '</div></div>';
+
+    html += '<div class="po-set-section"><h4>Accessories</h4><div id="sfEdAccList">';
+    (data.acc || []).forEach(function(ex, ai) {
+      const repsVal = Array.isArray(ex.reps) ? ex.reps[0] : ex.reps;
+      html += '<div class="po-set-row sfEdAccRow" data-ai="' + ai + '" style="flex-direction:column;align-items:stretch;gap:6px;padding:10px 12px">'
+        + '<div style="display:flex;align-items:center;gap:6px">'
+        + '<input type="text" class="sfEdAccName" value="' + escH(ex.name) + '" placeholder="Exercise name" style="flex:1;font-size:13px">'
+        + '<button class="po-mini-btn sfEdAccDel" type="button">×</button>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+        + '<input type="number" class="sfEdAccSets" value="' + ex.sets + '" min="1" max="10"'
+        + ' style="width:44px;text-align:center;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;padding:5px;color:var(--text-1);font-size:12px;font-family:inherit;outline:none">'
+        + '<span style="font-size:12px;color:var(--text-3)">sets ×</span>'
+        + '<input type="text" class="sfEdAccReps" value="' + escH(String(repsVal)) + '" placeholder="reps"'
+        + ' style="width:48px;text-align:center;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;padding:5px;color:var(--text-1);font-size:12px;font-family:inherit;outline:none">'
+        + '<span style="font-size:12px;color:var(--text-3)">reps</span>'
+        + '</div></div>';
+    });
+    html += '<button class="po-add-row-btn sfEdAddAcc" type="button" style="margin-top:8px">+ Add accessory</button></div></div>';
+
+    content.innerHTML = html;
+
+    content.querySelector('#sfEdMainName').addEventListener('input', function() {
+      SF_DATA[_sfEditDay].main.name = this.value; saveSFData();
+    });
+    content.querySelectorAll('.sfEdTarget').forEach(function(inp) {
+      inp.addEventListener('change', function() {
+        const v = parseFloat(inp.value);
+        SF_DATA[_sfEditDay].main.targets[parseInt(inp.dataset.wi)] = isNaN(v) ? null : v;
+        saveSFData();
+      });
+    });
+    content.querySelectorAll('.sfEdAccRow').forEach(function(row) {
+      const ai = parseInt(row.dataset.ai);
+      row.querySelector('.sfEdAccName').addEventListener('input', function() {
+        SF_DATA[_sfEditDay].acc[ai].name = this.value; saveSFData();
+      });
+      row.querySelector('.sfEdAccSets').addEventListener('change', function() {
+        SF_DATA[_sfEditDay].acc[ai].sets = parseInt(this.value) || 3; saveSFData();
+      });
+      row.querySelector('.sfEdAccReps').addEventListener('change', function() {
+        const v = this.value.trim();
+        SF_DATA[_sfEditDay].acc[ai].reps = [v, v, v, v]; saveSFData();
+      });
+      row.querySelector('.sfEdAccDel').addEventListener('click', function() {
+        if (!confirm('Remove this exercise?')) return;
+        SF_DATA[_sfEditDay].acc.splice(ai, 1); saveSFData(); renderSFEditor();
+      });
+    });
+    content.querySelector('.sfEdAddAcc').addEventListener('click', function() {
+      SF_DATA[_sfEditDay].acc.push({ name: '', sets: 3, reps: [10, 10, 10, 10], tempo: '3-1-1' });
+      saveSFData(); renderSFEditor();
+    });
+  }
+
+  document.getElementById('sfEditProgBtn').addEventListener('click', function() {
+    renderSFEditor();
+    document.getElementById('sfEditBg').classList.add('show');
+  });
+  document.getElementById('sfEditBg').addEventListener('click', function(e) {
+    if (e.target === this) { document.getElementById('sfEditBg').classList.remove('show'); renderAll(); }
+  });
+  document.getElementById('sfEditClose').addEventListener('click', function() {
+    document.getElementById('sfEditBg').classList.remove('show'); renderAll();
   });
 })();
 </script>
