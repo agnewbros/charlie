@@ -4810,6 +4810,9 @@ img, video, canvas, svg { max-width: 100%; }
       date: wtDateKey(new Date()), sessionCount: sess.sessionCount, exercises: []
     };
 
+    (_sessBuffer.exercises || []).forEach(function(ex) {
+      if (ex.exId && ex.name) registerExercise(ex.exId, ex.name);
+    });
     (_sessBuffer.exercises || []).forEach(function(exEntry, ei) {
       container.appendChild(buildSessExCard(exEntry, ei, sess));
     });
@@ -5004,8 +5007,10 @@ img, video, canvas, svg { max-width: 100%; }
     if (!_sessBuffer) {
       _sessBuffer = { date: wtDateKey(new Date()), sessionCount: sess.sessionCount, exercises: [] };
     }
-    _sessBuffer.exercises.push({ exId: uid(), name: name, sets: [{ weight: '', reps: '', completed: false }] });
+    var exId = uid();
+    _sessBuffer.exercises.push({ exId: exId, name: name, sets: [{ weight: '', reps: '', completed: false }] });
     saveSessBuffer(_sessBuffer);
+    registerExercise(exId, name);
     renderSessExCards(sess);
   });
 

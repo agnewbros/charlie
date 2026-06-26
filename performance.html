@@ -481,7 +481,13 @@ function loadRegistry(){
 }
 function updateRegistry(exercises){
   const reg=loadRegistry(); let changed=false;
+  // From program exercises
   (exercises||[]).forEach(function(e){ if(e.id&&e.name&&reg[e.id]!==e.name){ reg[e.id]=e.name; changed=true; } });
+  // From blank-slate session buffer (exercises added ad-hoc)
+  try{
+    const buf=JSON.parse(localStorage.getItem('po_session_buffer_v1'));
+    if(buf&&buf.exercises){ buf.exercises.forEach(function(ex){ if(ex.exId&&ex.name&&reg[ex.exId]!==ex.name){ reg[ex.exId]=ex.name; changed=true; } }); }
+  }catch(e){}
   if(changed) localStorage.setItem(EX_REG_KEY,JSON.stringify(reg));
   return reg;
 }
