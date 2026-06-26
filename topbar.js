@@ -379,3 +379,8 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     boot();
   }
 })();
+
+// Register service worker for automatic updates
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Charlie",
+  "short_name": "Charlie",
+  "description": "Personal fitness & wellness tracker",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0b",
+  "theme_color": "#0a0a0b",
+  "orientation": "portrait-primary"
+}
