@@ -2362,6 +2362,7 @@ img, video, canvas, svg { max-width: 100%; }
 
     <div class="po-set-section">
       <h4>Data</h4>
+      <div id="setStorageInfo" style="font-size:12px;color:var(--text-3);margin-bottom:10px"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="po-btn-secondary" id="setExport">Export JSON</button>
         <button class="po-btn-secondary" id="setImport">Import JSON</button>
@@ -3375,6 +3376,23 @@ img, video, canvas, svg { max-width: 100%; }
         });
       });
     }
+
+    // Storage info
+    (function() {
+      var photoRaw = localStorage.getItem('po_coach_photos');
+      var photoCount = 0, photoKB = 0;
+      try { var pa = JSON.parse(photoRaw); photoCount = pa ? pa.length : 0; } catch {}
+      photoKB = Math.round((photoRaw ? photoRaw.length : 0) * 0.75 / 1024);
+      var totalKB = 0;
+      for (var _si = 0; _si < localStorage.length; _si++) {
+        var _sv = localStorage.getItem(localStorage.key(_si));
+        totalKB += _sv ? Math.round(_sv.length * 0.75 / 1024) : 0;
+      }
+      var pct = Math.min(100, Math.round(totalKB / 5120 * 100));
+      var color = pct > 80 ? 'var(--bad)' : pct > 60 ? '#d97706' : 'var(--text-3)';
+      $('setStorageInfo').innerHTML = 'Storage: <span style="color:' + color + '">' + totalKB + ' KB used (~' + pct + '% of 5 MB limit)</span>'
+        + (photoCount ? ' · ' + photoCount + ' progress photo' + (photoCount !== 1 ? 's' : '') + ' (' + photoKB + ' KB)' : '');
+    })();
 
     // Custom exercise library
     var custExList = $('setCustomExList');
@@ -5309,7 +5327,18 @@ img, video, canvas, svg { max-width: 100%; }
   const SUPABASE_KEY = (window.AppConfig && localStorage.getItem('user_supabase_key')) || '';
   const APP_KEY = 'po-coach';
   const PC_SYNCED_KEYS = ['po_coach_v1', 'po_coach_workout_done', 'po_coach_weights', 'po_coach_photos', PROGRAMS_KEY];
-  function pcIsGymKey(k) { return k && (k.startsWith('po_coach_') || k === PROGRAMS_KEY || k === SESSION_KEY || k === BUFFER_KEY); }
+  function pcIsGymKey(k) {
+    return k && (
+      k.startsWith('po_coach_') ||
+      k.startsWith('po_sf_') ||
+      k === PROGRAMS_KEY ||
+      k === SESSION_KEY ||
+      k === BUFFER_KEY ||
+      k === 'po_ex_registry' ||
+      k === 'po_custom_ex_v1' ||
+      k === 'sf_start_date'
+    );
+  }
 
   let pcSupa = null;
   let pcPushTimer = null;
@@ -5317,6 +5346,18 @@ img, video, canvas, svg { max-width: 100%; }
   let pcPendingRemote = null;
   let pcLastSyncedJson = null;
   let _pcUid = null, _pcToken = null; // cached from auth session
+  let _pcQuotaWarnShown = false;
+
+  function pcShowQuotaBanner() {
+    if (_pcQuotaWarnShown) return;
+    _pcQuotaWarnShown = true;
+    const div = document.createElement('div');
+    div.id = 'pcQuotaBanner';
+    div.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b45309;color:#fff;font-size:13px;font-family:inherit;padding:12px 16px;text-align:center;cursor:pointer;';
+    div.textContent = 'Storage nearly full — export a backup from Settings, then delete old progress photos to free space. Tap to dismiss.';
+    div.onclick = () => div.remove();
+    document.body ? document.body.appendChild(div) : document.addEventListener('DOMContentLoaded', () => document.body.appendChild(div));
+  }
 
   const _pcOrigSet = localStorage.setItem.bind(localStorage);
   const _pcOrigRemove = localStorage.removeItem.bind(localStorage);
@@ -5324,7 +5365,14 @@ img, video, canvas, svg { max-width: 100%; }
   // underlying write from happening. The original call always runs;
   // any error in the sync scheduling is swallowed.
   localStorage.setItem = function(k, v) {
-    _pcOrigSet(k, v);
+    try {
+      _pcOrigSet(k, v);
+    } catch (e) {
+      if (e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || (e.code && e.code === 22))) {
+        pcShowQuotaBanner();
+      }
+      throw e;
+    }
     try {
       if (!pcSuppressSync && pcIsGymKey(k)) pcSchedulePush();
     } catch (e) {}
