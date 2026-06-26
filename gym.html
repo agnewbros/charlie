@@ -846,9 +846,6 @@ img, video, canvas, svg { max-width: 100%; }
   .po-tw-row { gap: 8px; }
   .po-tw-row-name { min-width: 0; word-break: break-word; }
 
-  /* Progress photos grid — match the available width */
-  .wt-photo-grid { gap: 8px; }
-
   /* Bottom tab bar — slightly smaller pills so both labels always fit */
   .tab { padding: 11px 10px; font-size: 13px; }
   .tabbar { padding-left: 12px; padding-right: 12px; }
@@ -1164,28 +1161,6 @@ img, video, canvas, svg { max-width: 100%; }
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Progress link */
-.wt-progress-link {
-  display: flex; align-items: center; justify-content: space-between;
-  background: var(--bg-card);
-  border: 1px solid rgba(110,231,183,0.10);
-  border-radius: 16px;
-  padding: 18px 20px;
-  color: var(--text-1);
-  margin-top: 12px; cursor: pointer; width: 100%;
-  font-family: inherit; text-align: left;
-  transition: border-color 0.2s, transform 0.15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.wt-progress-link:hover { border-color: rgba(110,231,183,0.25); }
-.wt-progress-link:active { transform: scale(0.99); }
-.wt-progress-label {
-  font-size: 11px; letter-spacing: 0.20em; font-weight: 600;
-  color: var(--text-3); margin-bottom: 4px;
-}
-.wt-progress-count { font-size: 14px; font-weight: 500; }
-.wt-progress-arrow { color: var(--good); font-size: 20px; }
-
 /* Overlay */
 .wt-overlay {
   position: fixed; inset: 0;
@@ -1232,158 +1207,6 @@ img, video, canvas, svg { max-width: 100%; }
   border: 1px solid var(--border);
   color: var(--text-1);
 }
-.wt-photo-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-}
-.wt-photo-empty {
-  grid-column: 1 / -1; text-align: center;
-  padding: 50px 20px; color: var(--text-3); font-size: 13px;
-}
-.wt-photo-card {
-  position: relative; aspect-ratio: 3 / 4;
-  border-radius: 12px; overflow: hidden;
-  background: linear-gradient(135deg, #1a1a24, #0a0f0a);
-  cursor: pointer; border: 1px solid rgba(110,231,183,0.08);
-  font-family: inherit;
-  -webkit-tap-highlight-color: transparent;
-}
-.wt-photo-card.is-removing { opacity: 0; transform: scale(0.92); transition: 0.25s; }
-.wt-photo-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.wt-photo-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.7) 100%); pointer-events: none; }
-.wt-photo-meta {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  padding: 12px 14px;
-  display: flex; justify-content: space-between; align-items: flex-end;
-  font-size: 12px; font-weight: 500;
-}
-.wt-photo-date { color: var(--good); }
-.wt-photo-weight { color: var(--text-1); }
-
-/* Camera modal */
-.wt-cam {
-  position: fixed; inset: 0; background: #000; z-index: 300;
-  display: none; flex-direction: column;
-}
-.wt-cam.is-open { display: flex; }
-.wt-cam-stage {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  overflow: hidden; position: relative;
-}
-.wt-cam-video {
-  width: 100%; height: 100%; object-fit: cover; background: #000;
-}
-.wt-cam-actions {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 24px 28px calc(24px + env(safe-area-inset-bottom));
-  background: #000;
-}
-.wt-cam-btn {
-  background: transparent; border: none; color: var(--text-1);
-  font-family: inherit; font-size: 14px; font-weight: 500;
-  cursor: pointer; padding: 10px; min-width: 60px;
-  display: flex; align-items: center; justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-}
-.wt-cam-shutter {
-  width: 64px; height: 64px; border-radius: 50%;
-  background: #fff;
-  border: 4px solid rgba(255,255,255,0.3);
-  box-shadow: 0 0 0 2px #fff inset;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.wt-cam-shutter:active { transform: scale(0.92); }
-
-/* Photo viewer */
-.wt-viewer {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.96); z-index: 200;
-  opacity: 0; pointer-events: none;
-  transition: opacity 0.2s;
-  display: flex; flex-direction: column;
-  padding: 24px 16px;
-}
-.wt-viewer.is-open { opacity: 1; pointer-events: auto; }
-.wt-viewer-stage {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
-}
-.wt-viewer-meta {
-  text-align: center; padding: 16px 0 8px;
-}
-.wt-viewer-date {
-  color: var(--good); font-size: 11px; letter-spacing: 0.18em;
-  font-weight: 600; margin-bottom: 4px;
-}
-.wt-viewer-weight {
-  color: var(--text-1); font-size: 20px; font-weight: 600;
-}
-.wt-viewer-actions {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-}
-.wt-viewer-btn {
-  background: transparent; border: 1px solid var(--border);
-  font-family: inherit; font-size: 14px; font-weight: 500;
-  padding: 12px; cursor: pointer; border-radius: 10px;
-  -webkit-tap-highlight-color: transparent;
-}
-.wt-viewer-close { color: var(--text-1); }
-.wt-viewer-delete { color: var(--bad); border-color: rgba(248,113,113,0.3); }
-.wt-viewer-delete.is-confirm { background: rgba(248,113,113,0.10); }
-.wt-viewer-compare { color: var(--good); border-color: rgba(110,231,183,0.30); }
-.wt-viewer-back    { color: var(--good); border-color: rgba(110,231,183,0.30); }
-
-/* Mode toggle: hide the inactive mode */
-.wt-viewer .wt-viewer-single,
-.wt-viewer .wt-viewer-compare-view {
-  display: none;
-  flex-direction: column; flex: 1; min-height: 0;
-}
-.wt-viewer[data-mode="single"]  .wt-viewer-single        { display: flex; }
-.wt-viewer[data-mode="compare"] .wt-viewer-compare-view  { display: flex; }
-
-/* Compare-mode side-by-side layout */
-.wt-compare-stage {
-  flex: 1; display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px; min-height: 0;
-  align-items: stretch;
-}
-.wt-compare-side {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  min-height: 0; min-width: 0;
-  background: transparent;
-  border: none; padding: 0; cursor: default;
-  font-family: inherit;
-}
-.wt-compare-side img {
-  max-width: 100%; max-height: calc(100% - 28px);
-  object-fit: contain; border-radius: 6px;
-}
-.wt-compare-meta-line {
-  margin-top: 6px;
-  font-size: 12px; color: var(--text-3);
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-.wt-compare-other { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.wt-compare-other:hover img { outline: 1px solid rgba(110,231,183,0.30); }
-.wt-compare-headline {
-  text-align: center; padding: 14px 8px 12px;
-  font-size: 14px; font-weight: 600;
-  color: var(--good);
-  font-variant-numeric: tabular-nums;
-}
-.wt-compare-headline.up   { color: var(--warn); }
-.wt-compare-headline.down { color: var(--good); }
-.wt-compare-headline.flat { color: var(--text-2); }
-
-@media (max-width: 480px) {
-  .wt-compare-stage { gap: 4px; }
-  .wt-compare-meta-line { font-size: 11px; }
-}
-
 .hidden { display: none !important; }
 
 /* ========== STRENGTH FOUNDATIONS — PROGRAM TAB ========== */
@@ -2143,90 +1966,6 @@ img, video, canvas, svg { max-width: 100%; }
           <span class="wt-unit-static" id="wtUnitStatic">kg</span>
           <button class="wt-save-btn" id="wtSaveBtn">Save</button>
         </div>
-      </div>
-    </div>
-
-    <button class="wt-progress-link" id="wtProgressLink" type="button" aria-label="Open progress photos">
-      <div>
-        <div class="wt-progress-label">PROGRESS PHOTOS</div>
-        <div class="wt-progress-count" id="wtProgressCount">0 photos</div>
-      </div>
-      <span class="wt-progress-arrow">→</span>
-    </button>
-  </div>
-
-  <!-- Progress photos overlay -->
-  <div class="wt-overlay" id="wtOverlay" aria-hidden="true">
-    <div class="wt-overlay-inner">
-      <div class="wt-overlay-h">
-        <button class="wt-back" id="wtBack" aria-label="Back">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-        </button>
-        <div class="wt-overlay-title">Progress</div>
-      </div>
-      <div class="wt-overlay-actions">
-        <button class="wt-overlay-action wt-overlay-primary" id="wtTakePhotoBtn">Take Photo</button>
-        <button class="wt-overlay-action wt-overlay-secondary" id="wtFromLibraryBtn">From Library</button>
-      </div>
-      <input type="file" id="wtFileCamera" accept="image/*" capture="environment" style="display:none">
-      <input type="file" id="wtFileLibrary" accept="image/*" style="display:none">
-      <div class="wt-photo-grid" id="wtPhotoGrid">
-        <div class="wt-photo-empty">No photos yet · tap Take Photo to start</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Camera modal -->
-  <div class="wt-cam" id="wtCam" aria-hidden="true">
-    <div class="wt-cam-stage">
-      <video class="wt-cam-video" id="wtCamVideo" autoplay playsinline muted></video>
-      <canvas id="wtCamCanvas" style="display:none"></canvas>
-    </div>
-    <div class="wt-cam-actions">
-      <button class="wt-cam-btn" id="wtCamCancel">Cancel</button>
-      <button class="wt-cam-shutter" id="wtCamShutter" aria-label="Capture"></button>
-      <button class="wt-cam-btn" id="wtCamFlip" aria-label="Flip camera">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-      </button>
-    </div>
-  </div>
-
-  <!-- Photo viewer — has two modes: single (one photo) and compare (two photos side-by-side) -->
-  <div class="wt-viewer" id="wtViewer" data-mode="single" aria-hidden="true">
-
-    <!-- SINGLE MODE -->
-    <div class="wt-viewer-single">
-      <div class="wt-viewer-stage">
-        <img id="wtViewerImg" alt="" style="max-width:100%; max-height:100%; object-fit:contain;">
-      </div>
-      <div class="wt-viewer-meta">
-        <div class="wt-viewer-date" id="wtViewerDate">—</div>
-        <div class="wt-viewer-weight" id="wtViewerWeight">—</div>
-      </div>
-      <div class="wt-viewer-actions">
-        <button class="wt-viewer-btn wt-viewer-compare" id="wtViewerCompare">Compare</button>
-        <button class="wt-viewer-btn wt-viewer-close" id="wtViewerClose">Close</button>
-        <button class="wt-viewer-btn wt-viewer-delete" id="wtViewerDelete">Delete</button>
-      </div>
-    </div>
-
-    <!-- COMPARE MODE -->
-    <div class="wt-viewer-compare-view">
-      <div class="wt-compare-stage">
-        <div class="wt-compare-side" id="wtCmpSideA">
-          <img id="wtCmpImgA" alt="">
-          <div class="wt-compare-meta-line" id="wtCmpMetaA">—</div>
-        </div>
-        <button type="button" class="wt-compare-side wt-compare-other" id="wtCmpSideB" title="Tap to compare to a different photo" aria-label="Compare to a different photo">
-          <img id="wtCmpImgB" alt="">
-          <div class="wt-compare-meta-line" id="wtCmpMetaB">—</div>
-        </button>
-      </div>
-      <div class="wt-compare-headline" id="wtCompareHeadline">—</div>
-      <div class="wt-viewer-actions">
-        <button class="wt-viewer-btn wt-viewer-back" id="wtCompareBack">← Back</button>
-        <button class="wt-viewer-btn wt-viewer-close" id="wtCompareClose">Close</button>
-        <button class="wt-viewer-btn wt-viewer-delete" id="wtCompareDelete">Delete</button>
       </div>
     </div>
 
@@ -3379,10 +3118,6 @@ img, video, canvas, svg { max-width: 100%; }
 
     // Storage info
     (function() {
-      var photoRaw = localStorage.getItem('po_coach_photos');
-      var photoCount = 0, photoKB = 0;
-      try { var pa = JSON.parse(photoRaw); photoCount = pa ? pa.length : 0; } catch {}
-      photoKB = Math.round((photoRaw ? photoRaw.length : 0) * 0.75 / 1024);
       var totalKB = 0;
       for (var _si = 0; _si < localStorage.length; _si++) {
         var _sv = localStorage.getItem(localStorage.key(_si));
@@ -3390,8 +3125,7 @@ img, video, canvas, svg { max-width: 100%; }
       }
       var pct = Math.min(100, Math.round(totalKB / 5120 * 100));
       var color = pct > 80 ? 'var(--bad)' : pct > 60 ? '#d97706' : 'var(--text-3)';
-      $('setStorageInfo').innerHTML = 'Storage: <span style="color:' + color + '">' + totalKB + ' KB used (~' + pct + '% of 5 MB limit)</span>'
-        + (photoCount ? ' · ' + photoCount + ' progress photo' + (photoCount !== 1 ? 's' : '') + ' (' + photoKB + ' KB)' : '');
+      $('setStorageInfo').innerHTML = 'Storage: <span style="color:' + color + '">' + totalKB + ' KB used (~' + pct + '% of 5 MB limit)</span>';
     })();
 
     // Custom exercise library
@@ -3858,13 +3592,11 @@ img, video, canvas, svg { max-width: 100%; }
   }
 
   // ============================================================
-  // WEIGHT TRACKER + COMPOSITION ESTIMATE + PROGRESS PHOTOS
+  // WEIGHT TRACKER + COMPOSITION ESTIMATE
   // All persisted to localStorage:
   //   po_coach_weights : [{ dateKey:'YYYY-MM-DD', weight:Number }]
-  //   po_coach_photos  : [{ id, dataUrl, dateKey, weight }]
   // ============================================================
   const WT_KEY = 'po_coach_weights';
-  const PHOTO_KEY = 'po_coach_photos';
 
   function wtLoad() {
     try {
@@ -4191,313 +3923,6 @@ img, video, canvas, svg { max-width: 100%; }
     if (todayEntry) $('wtInput').value = todayEntry.weight.toFixed(1);
     $('wtInput').focus(); $('wtInput').select();
   });
-
-  // ============================================================
-  // PROGRESS PHOTOS
-  // ============================================================
-  let photos = [];
-  try {
-    const raw = localStorage.getItem(PHOTO_KEY);
-    if (raw) photos = JSON.parse(raw);
-  } catch (e) { photos = []; }
-
-  function photosSave() {
-    try {
-      localStorage.setItem(PHOTO_KEY, JSON.stringify(photos));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-  // Downscale a dataURL to a max longest-side dimension and re-encode as
-  // JPEG. Phone camera photos are often 2–5MB which blows the ~5MB
-  // localStorage quota after one or two saves. Compressing to ~1080px /
-  // q=0.75 typically drops each photo to <100KB.
-  function compressPhotoDataUrl(dataUrl, maxDim, quality) {
-    maxDim = maxDim || 1080;
-    quality = quality == null ? 0.75 : quality;
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        let w = img.naturalWidth || img.width;
-        let h = img.naturalHeight || img.height;
-        if (w > maxDim || h > maxDim) {
-          if (w >= h) { h = Math.round(h * (maxDim / w)); w = maxDim; }
-          else { w = Math.round(w * (maxDim / h)); h = maxDim; }
-        }
-        const c = document.createElement('canvas');
-        c.width = w; c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
-        try { resolve(c.toDataURL('image/jpeg', quality)); }
-        catch { resolve(dataUrl); }
-      };
-      img.onerror = () => resolve(dataUrl);
-      img.src = dataUrl;
-    });
-  }
-  function photoFmtDate(key) {
-    const d = wtParseKey(key);
-    const mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return mons[d.getMonth()] + ' ' + d.getDate();
-  }
-  function photoCurrentWeight() {
-    const last = wtEntries[wtEntries.length - 1];
-    return last ? (last.weight.toFixed(1) + ' ' + state.units) : '—';
-  }
-  function photosRender() {
-    const grid = $('wtPhotoGrid');
-    if (!photos.length) {
-      grid.innerHTML = '<div class="wt-photo-empty">No photos yet · tap Take Photo to start</div>';
-    } else {
-      grid.innerHTML = photos.map(p =>
-        '<button class="wt-photo-card" data-id="' + p.id + '" type="button">' +
-          '<img src="' + p.dataUrl + '" alt="">' +
-          '<div class="wt-photo-overlay"></div>' +
-          '<div class="wt-photo-meta">' +
-            '<span class="wt-photo-date">' + photoFmtDate(p.dateKey) + '</span>' +
-            '<span class="wt-photo-weight">' + (p.weight || '—') + '</span>' +
-          '</div>' +
-        '</button>'
-      ).join('');
-      grid.querySelectorAll('.wt-photo-card').forEach(card => {
-        card.addEventListener('click', () => openPhoto(card.dataset.id));
-      });
-    }
-    // Update count on the link
-    if (!photos.length) $('wtProgressCount').textContent = '0 photos';
-    else if (photos.length === 1) $('wtProgressCount').textContent = '1 photo · latest ' + photoFmtDate(photos[0].dateKey);
-    else $('wtProgressCount').textContent = photos.length + ' photos · latest ' + photoFmtDate(photos[0].dateKey);
-  }
-  async function photosAdd(dataUrl) {
-    let compressed = dataUrl;
-    try { compressed = await compressPhotoDataUrl(dataUrl); } catch {}
-    const id = 'p' + Date.now() + '_' + Math.floor(Math.random() * 999);
-    const entry = {
-      id,
-      dataUrl: compressed,
-      dateKey: wtDateKey(new Date()),
-      weight: photoCurrentWeight()
-    };
-    photos.unshift(entry);
-    if (!photosSave()) {
-      // Storage was full even after compression — try once more at lower
-      // quality before giving up.
-      try {
-        entry.dataUrl = await compressPhotoDataUrl(dataUrl, 800, 0.6);
-      } catch {}
-      if (!photosSave()) {
-        photos.shift();
-        alert('Phone storage is full — delete some older progress photos before adding a new one.');
-        return;
-      }
-    }
-    photosRender();
-  }
-  function fileToPhoto(file) {
-    const r = new FileReader();
-    r.onload = (e) => photosAdd(e.target.result);
-    r.readAsDataURL(file);
-  }
-
-  $('wtProgressLink').addEventListener('click', () => {
-    photosRender();
-    $('wtOverlay').classList.add('is-open');
-    document.body.style.overflow = 'hidden';
-  });
-  $('wtBack').addEventListener('click', () => {
-    $('wtOverlay').classList.remove('is-open');
-    document.body.style.overflow = '';
-  });
-
-  // Take Photo: try in-browser camera, fall back to file input
-  let camStream = null;
-  let camFacing = 'environment';
-  async function openCam() {
-    $('wtCam').classList.add('is-open');
-    try {
-      camStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: camFacing } }, audio: false
-      });
-      $('wtCamVideo').srcObject = camStream;
-    } catch (e) {
-      try {
-        camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        $('wtCamVideo').srcObject = camStream;
-      } catch (e2) {
-        closeCam();
-        alert('Camera unavailable. Use "From Library" instead.');
-        throw e2;
-      }
-    }
-  }
-  function closeCam() {
-    if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
-    $('wtCamVideo').srcObject = null;
-    $('wtCam').classList.remove('is-open');
-  }
-  $('wtTakePhotoBtn').addEventListener('click', async () => {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try { await openCam(); return; } catch (e) {}
-    }
-    $('wtFileCamera').click();
-  });
-  $('wtFileCamera').addEventListener('change', (e) => {
-    const f = e.target.files && e.target.files[0];
-    if (f) fileToPhoto(f);
-    e.target.value = '';
-  });
-  $('wtFromLibraryBtn').addEventListener('click', () => $('wtFileLibrary').click());
-  $('wtFileLibrary').addEventListener('change', (e) => {
-    const f = e.target.files && e.target.files[0];
-    if (f) fileToPhoto(f);
-    e.target.value = '';
-  });
-  $('wtCamCancel').addEventListener('click', closeCam);
-  $('wtCamFlip').addEventListener('click', async () => {
-    camFacing = camFacing === 'environment' ? 'user' : 'environment';
-    if (camStream) camStream.getTracks().forEach(t => t.stop());
-    try { await openCam(); } catch (e) {}
-  });
-  $('wtCamShutter').addEventListener('click', () => {
-    const video = $('wtCamVideo'), canvas = $('wtCamCanvas');
-    if (!video.videoWidth) return;
-    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-    closeCam();
-    photosAdd(dataUrl);
-  });
-
-  // Photo viewer
-  let activePhotoId = null;
-  let comparePhotoId = null;       // the OTHER photo being compared to
-  let pvDeleteConfirm = false;
-  function openPhoto(id) {
-    const p = photos.find(x => x.id === id);
-    if (!p) return;
-    activePhotoId = id;
-    $('wtViewerImg').src = p.dataUrl;
-    $('wtViewerDate').textContent = photoFmtDate(p.dateKey).toUpperCase();
-    $('wtViewerWeight').textContent = p.weight || '—';
-    $('wtViewer').dataset.mode = 'single';
-    $('wtViewer').classList.add('is-open');
-    pvDeleteConfirm = false;
-    $('wtViewerDelete').textContent = 'Delete';
-    $('wtViewerDelete').classList.remove('is-confirm');
-    // Disable Compare button if there's no other photo to compare against
-    $('wtViewerCompare').disabled = photos.length < 2;
-    $('wtViewerCompare').style.opacity = photos.length < 2 ? '0.4' : '';
-  }
-  function closePhoto() {
-    $('wtViewer').classList.remove('is-open');
-    $('wtViewer').dataset.mode = 'single';
-    activePhotoId = null;
-    comparePhotoId = null;
-  }
-
-  // Pull a number out of "162.0 lbs" / "73.5 kg" / "—"
-  function parseWeightStr(w) {
-    if (!w) return null;
-    const m = String(w).match(/-?\d+(\.\d+)?/);
-    return m ? parseFloat(m[0]) : null;
-  }
-  // Format a delta with arrow + sign
-  function fmtDelta(diff, units) {
-    if (diff == null) return '';
-    if (Math.abs(diff) < 0.05) return '· no change';
-    const sign = diff > 0 ? '+' : '−';
-    return '· ' + sign + Math.abs(diff).toFixed(1) + ' ' + units;
-  }
-
-  // Pick the "compare to" photo for a given active id. Default: the most
-  // recent photo BEFORE the active one (older → time-progress comparison).
-  // Falls back to the most recent newer photo if active is the oldest.
-  function defaultCompareFor(activeId) {
-    const idx = photos.findIndex(p => p.id === activeId);
-    if (idx === -1) return null;
-    if (photos[idx + 1]) return photos[idx + 1].id;        // photos are stored newest-first
-    if (photos[idx - 1]) return photos[idx - 1].id;
-    return null;
-  }
-
-  function openCompare(activeId, otherId) {
-    const A = photos.find(p => p.id === activeId);
-    const B = photos.find(p => p.id === otherId);
-    if (!A || !B) return;
-    activePhotoId = activeId;
-    comparePhotoId = otherId;
-    $('wtCmpImgA').src = A.dataUrl;
-    $('wtCmpImgB').src = B.dataUrl;
-    $('wtCmpMetaA').textContent = photoFmtDate(A.dateKey) + ' · ' + (A.weight || '—');
-    $('wtCmpMetaB').textContent = photoFmtDate(B.dateKey) + ' · ' + (B.weight || '—');
-    // Headline — date arrow + weight delta
-    const wA = parseWeightStr(A.weight);
-    const wB = parseWeightStr(B.weight);
-    const headEl = $('wtCompareHeadline');
-    let cls = 'flat', headline = photoFmtDate(A.dateKey) + ' → ' + photoFmtDate(B.dateKey);
-    if (wA != null && wB != null) {
-      const diff = wA - wB; // active vs comparison
-      headline += ' ' + fmtDelta(diff, state.units);
-      if (Math.abs(diff) < 0.05) cls = 'flat';
-      else if (diff > 0) cls = 'up';
-      else cls = 'down';
-    }
-    headEl.textContent = headline;
-    headEl.className = 'wt-compare-headline ' + cls;
-    $('wtViewer').dataset.mode = 'compare';
-    $('wtViewer').classList.add('is-open');
-    pvDeleteConfirm = false;
-    $('wtCompareDelete').textContent = 'Delete';
-    $('wtCompareDelete').classList.remove('is-confirm');
-  }
-
-  function cycleCompareTarget() {
-    if (!activePhotoId) return;
-    const others = photos.filter(p => p.id !== activePhotoId);
-    if (!others.length) return;
-    const curIdx = others.findIndex(p => p.id === comparePhotoId);
-    const nextIdx = (curIdx + 1) % others.length;
-    openCompare(activePhotoId, others[nextIdx].id);
-  }
-
-  function deleteActivePhoto(deleteBtn) {
-    if (!activePhotoId) return;
-    if (!pvDeleteConfirm) {
-      pvDeleteConfirm = true;
-      deleteBtn.textContent = 'Confirm delete?';
-      deleteBtn.classList.add('is-confirm');
-      setTimeout(() => {
-        pvDeleteConfirm = false;
-        deleteBtn.textContent = 'Delete';
-        deleteBtn.classList.remove('is-confirm');
-      }, 3000);
-      return;
-    }
-    photos = photos.filter(p => p.id !== activePhotoId);
-    photosSave();
-    photosRender();
-    closePhoto();
-  }
-
-  $('wtViewerClose').addEventListener('click', closePhoto);
-  $('wtCompareClose').addEventListener('click', closePhoto);
-  $('wtViewerDelete').addEventListener('click', () => deleteActivePhoto($('wtViewerDelete')));
-  $('wtCompareDelete').addEventListener('click', () => deleteActivePhoto($('wtCompareDelete')));
-  $('wtViewerCompare').addEventListener('click', () => {
-    if (!activePhotoId) return;
-    const otherId = defaultCompareFor(activePhotoId);
-    if (!otherId) { alert('Need at least one other photo to compare.'); return; }
-    openCompare(activePhotoId, otherId);
-  });
-  $('wtCompareBack').addEventListener('click', () => {
-    if (activePhotoId) {
-      $('wtViewer').dataset.mode = 'single';
-    } else {
-      closePhoto();
-    }
-  });
-  // Tap the right-hand "other" photo to cycle through different comparison targets
-  $('wtCmpSideB').addEventListener('click', cycleCompareTarget);
 
   // ============================================================
   // QUICK WORKOUT LOGGER
@@ -5303,7 +4728,6 @@ img, video, canvas, svg { max-width: 100%; }
   // ============================================================
   renderAll();
   wtRender();
-  photosRender();
 
   // ============================================================
   // CLOUD SYNC via Supabase  (OPTIONAL — leave blank for local-only)
@@ -5326,7 +4750,7 @@ img, video, canvas, svg { max-width: 100%; }
   const SUPABASE_URL = (window.AppConfig && localStorage.getItem('user_supabase_url')) || '';
   const SUPABASE_KEY = (window.AppConfig && localStorage.getItem('user_supabase_key')) || '';
   const APP_KEY = 'po-coach';
-  const PC_SYNCED_KEYS = ['po_coach_v1', 'po_coach_workout_done', 'po_coach_weights', 'po_coach_photos', PROGRAMS_KEY];
+  const PC_SYNCED_KEYS = ['po_coach_v1', 'po_coach_workout_done', 'po_coach_weights', PROGRAMS_KEY];
   function pcIsGymKey(k) {
     return k && (
       k.startsWith('po_coach_') ||
@@ -5354,7 +4778,7 @@ img, video, canvas, svg { max-width: 100%; }
     const div = document.createElement('div');
     div.id = 'pcQuotaBanner';
     div.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b45309;color:#fff;font-size:13px;font-family:inherit;padding:12px 16px;text-align:center;cursor:pointer;';
-    div.textContent = 'Storage nearly full — export a backup from Settings, then delete old progress photos to free space. Tap to dismiss.';
+    div.textContent = 'Storage nearly full — export a backup from Settings, then delete some data to free space. Tap to dismiss.';
     div.onclick = () => div.remove();
     document.body ? document.body.appendChild(div) : document.addEventListener('DOMContentLoaded', () => document.body.appendChild(div));
   }
@@ -5411,14 +4835,9 @@ img, video, canvas, svg { max-width: 100%; }
     try { migrateToMultiProgram(); } catch {}
     try { state = loadState(); } catch {}
     try { wtEntries = wtLoad(); } catch {}
-    try {
-      const raw = localStorage.getItem(PHOTO_KEY);
-      photos = raw ? JSON.parse(raw) : [];
-    } catch { photos = []; }
     try { _sessBuffer = loadSessBuffer(); } catch {}
     try { renderAll(); } catch {}
     try { wtRender(); } catch {}
-    try { photosRender(); } catch {}
   }
 
   function pcApplyRemoteState(remote) {
