@@ -4164,7 +4164,7 @@ img, video, canvas, svg { max-width: 100%; }
         var r = parseInt(rIn.value) || 0;
         s.weight = w; s.reps = r; s.completed = true;
         if (!state.logs[_logExId]) state.logs[_logExId] = [];
-        state.logs[_logExId].push({ weight: w, reps: r, date: new Date().toISOString() });
+        state.logs[_logExId].push({ weight: w, reps: r, date: new Date().toISOString(), name: _logExName });
         saveState();
         registerExercise(_logExId, _logExName);
         card.classList.add('is-done');
@@ -4427,7 +4427,7 @@ img, video, canvas, svg { max-width: 100%; }
           saveSessBuffer(_sessBuffer);
 
           if (!state.logs[exEntry.exId]) state.logs[exEntry.exId] = [];
-          state.logs[exEntry.exId].push({ weight: w, reps: r, date: wtDateKey(new Date()) });
+          state.logs[exEntry.exId].push({ weight: w, reps: r, date: wtDateKey(new Date()), name: exEntry.name });
           registerExercise(exEntry.exId, exEntry.name);
           saveState();
 

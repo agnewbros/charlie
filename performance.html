@@ -571,6 +571,13 @@ function initStrength(){
   const pills=document.getElementById('exPills');
   pills.innerHTML='';
 
+  // Fall back to name stored in the log entry itself (written since 2026-06)
+  sorted.forEach(function(id){
+    if(!reg[id]){
+      const n=(logsMap[id]||[]).find(function(l){return l.name;});
+      if(n&&n.name) reg[id]=n.name;
+    }
+  });
   const named=sorted.filter(id=>!!reg[id]);
 
   if(!named.length){
