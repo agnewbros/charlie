@@ -413,6 +413,7 @@ input[type=date].pi-input{color-scheme:dark}
 'use strict';
 
 const LS_KEY = 'po_coach_v1';
+const PROGS_KEY = 'po_programs_v1';
 
 if(window.AppConfig) window.AppConfig.requireConfig();
 document.title = 'Intel — ' + (window.AppConfig ? window.AppConfig.getDisplayName() : 'Dashboard');
@@ -435,7 +436,44 @@ function todayStr(){ const d=new Date(); return d.toISOString().split('T')[0]; }
 function dlbl(s){ return new Date(s+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
 function e1RM(w,r){ return r<=1?w:(w*r*0.0333)+w; }
 function weekKey(s){ const d=new Date(s+'T12:00:00'); const m=new Date(d); m.setDate(d.getDate()-((d.getDay()+6)%7)); return m.toISOString().split('T')[0]; }
-function loadWS(){ try{ return JSON.parse(localStorage.getItem(LS_KEY))||{}; }catch(e){ return {}; } }
+function progKey(id){ return id==='prog_1'?'po_coach_v1':'po_coach_'+id; }
+
+// Load the active program's state, merging logs+exercises from all programs
+function loadWS(){
+  try{
+    const progs=JSON.parse(localStorage.getItem(PROGS_KEY));
+    const activeId=(progs&&progs.activeId)||'prog_1';
+    const activeState=JSON.parse(localStorage.getItem(progKey(activeId)))||{};
+
+    if(!progs||!progs.programs||Object.keys(progs.programs).length<=1){
+      return activeState;
+    }
+
+    // Aggregate logs and exercises across all programs for complete history
+    const allLogs=Object.assign({},activeState.logs||{});
+    const allExercises=(activeState.exercises||[]).slice();
+    const seenEx=new Set(allExercises.map(function(e){return e.id;}));
+
+    Object.keys(progs.programs).forEach(function(id){
+      if(id===activeId) return;
+      try{
+        const s=JSON.parse(localStorage.getItem(progKey(id)));
+        if(!s) return;
+        Object.keys(s.logs||{}).forEach(function(exId){
+          if(!allLogs[exId]) allLogs[exId]=[];
+          allLogs[exId]=allLogs[exId].concat(s.logs[exId]||[]);
+        });
+        (s.exercises||[]).forEach(function(ex){
+          if(ex.id&&!seenEx.has(ex.id)){ allExercises.push(ex); seenEx.add(ex.id); }
+        });
+      }catch(e){}
+    });
+
+    return Object.assign({},activeState,{logs:allLogs,exercises:allExercises});
+  }catch(e){
+    try{ return JSON.parse(localStorage.getItem(LS_KEY))||{}; }catch(e2){ return {}; }
+  }
+}
 function avg(arr){ return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0; }
 function nil(v,u){ return v!=null?v+u:'—'; }
 
